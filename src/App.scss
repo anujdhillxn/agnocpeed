@@ -1,0 +1,60 @@
+.App {
+  width: 100%;
+  td {
+    border: 1px solid black;
+  }
+  font-size: 13px;
+  margin: 10px;
+  .selection {
+    div {
+      margin-bottom: 5px;
+    }
+  }
+  .headers {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .button-section {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .compile-message {
+    max-height: 120px;
+    overflow-y: scroll;
+    margin-bottom: 10px;
+    border: 1px solid black;
+  }
+  .test-cases {
+    display: flex;
+    margin-bottom: 10px;
+    .test-case {
+      .input,
+      .output,
+      .result {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-right: 5%;
+        textarea {
+          max-height: 100px;
+        }
+      }
+    }
+  }
+}
+
+.dropdown {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  .dropdown-clickable {
+    .dropdown-header {
+      position: relative;
+    }
+    .dd-list {
+      position: absolute;
+      overflow-y: scroll;
+      overflow-x: hidden;
+    }
+  }
+}
