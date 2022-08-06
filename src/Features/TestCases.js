@@ -1,26 +1,22 @@
-export default function TestCases({
-  currentProblem,
-  problemDetails,
-  problemList,
-  setProblemDetails,
-}) {
-  const getColor = (verdict) => {
-    if (verdict === "AC" || verdict === "OK") return "lightgreen";
-    if (verdict === "WA" || verdict === "WRONG_ANSWER") return "red";
-    return "yellow";
-  };
+import { useContext } from "react";
+import { appContext } from "../App";
+import { CHANGE_PROBLEM_DETAILS } from "../utils/constants";
+import { getColor } from "../utils/functions";
+
+export default function TestCases() {
+  const { state, dispatch } = useContext(appContext);
 
   if (
-    currentProblem === null ||
-    problemList === null ||
-    problemDetails === null ||
-    !(problemList[currentProblem] in problemDetails)
+    state.currentProblem === null ||
+    state.problemList === null ||
+    state.problemDetails === null ||
+    !(state.problemList[state.currentProblem] in state.problemDetails)
   )
     return <div>No test cases found</div>;
   else {
     return (
       <div className="test-cases">
-        {problemDetails[problemList[currentProblem]]["test_cases"].map(
+        {state.problemDetails[state.problemList[state.currentProblem]]["test_cases"].map(
           (item, idx) => {
             return (
               <div className="test-case">
@@ -29,11 +25,11 @@ export default function TestCases({
                   <textarea
                     value={item.input}
                     onChange={(e) => {
-                      let new_details = { ...problemDetails };
-                      new_details[problemList[currentProblem]]["test_cases"][
+                      let newDetails = { ...state.problemDetails };
+                      newDetails[state.problemList[state.currentProblem]]["test_cases"][
                         idx
                       ]["input"] = e.target.value;
-                      setProblemDetails(new_details);
+                      dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
                     }}
                   ></textarea>
                 </div>
@@ -42,11 +38,11 @@ export default function TestCases({
                   <textarea
                     value={item.output}
                     onChange={(e) => {
-                      let new_details = { ...problemDetails };
-                      new_details[problemList[currentProblem]]["test_cases"][
+                      let newDetails = { ...state.problemDetails };
+                      newDetails[state.problemList[state.currentProblem]]["test_cases"][
                         idx
                       ]["output"] = e.target.value;
-                      setProblemDetails(new_details);
+                      dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
                     }}
                   ></textarea>
                 </div>

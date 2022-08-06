@@ -4,9 +4,11 @@ import {
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { React, useState } from "react";
+import { React, useContext, useState } from "react";
+import { appContext } from "../App";
 
-export default function Dropdown({ list, label, displayed, setDisplayed }) {
+export default function Dropdown({ list, label, displayed, actionType }) {
+  const context = useContext(appContext);
   const [dropdownStatus, setDropdownStatus] = useState(false);
   const alterDropdownStatus = () => {
     setDropdownStatus(!dropdownStatus);
@@ -39,7 +41,7 @@ export default function Dropdown({ list, label, displayed, setDisplayed }) {
                 type="button"
                 className="dd-list-item"
                 onClick={() => {
-                  setDisplayed(idx);
+                  context.dispatch({ type: actionType, payload: idx });
                   alterDropdownStatus();
                 }}
                 key={idx}

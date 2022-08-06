@@ -1,25 +1,34 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+const isDev = require('electron-is-dev');
+const puppeteer = require('puppeteer');
 
-const path = require('path')
-const isDev = require('electron-is-dev')
 
-require('@electron/remote/main').initialize()
+require('@electron/remote/main').initialize();
 
+async function login() {
+    const browser = await puppeteer.launch({ headless: false });
+    const page = await browser.newPage();
+    (await page).goto("https://codeforces.com/enter?back=%2F");
+    await page.waitForSelector("#handleOrEmail");
+    await page.type("#handleOrEmail", "username");
+    await page.type("#password", "password");
+}
+
+let win;
 function createWindow() {
-    // Create the browser window.
-    const win = new BrowserWindow({
+    // login();
+    win = new BrowserWindow({
         width: 800,
         height: 600,
         webPreferences: {
+            preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
-            enableRemoteModule: true
+            enableRemoteModule: true,
         }
     })
-
-    win.loadURL(
-        isDev
-            ? 'http://localhost:3000'
-            : `file://${path.join(__dirname, '../build/index.html')}`
+    win.loadURL(isDev ? 'http://localhost:3000'
+        : `file://${path.join(__dirname, '../build/index.html')}`
     )
 }
 
