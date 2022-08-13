@@ -17,17 +17,6 @@ export const LANGUAGES = ["cpp", "py"];
 export const ACCEPTED_VERDICTS = ["AC", "OK"];
 export const REJECTED_VERDICTS = ["TLE", "WA", "WRONG_ANSWER", "TIME_LIMIT_EXCEEDED", "RE", "RUNTIME_ERROR"];
 
-export const INITIAL_STATE = {
-    submissions: [],
-    problemList: [],
-    problemDetails: null, //JSON
-    currentProblem: null, //number
-    serverMessage: "",
-    language: 0,
-    browserReady: false,
-    contestReady: false,
-}
-
 export const APP_LAYOUT = {
     global: { tabEnableClose: false },
     borders: [

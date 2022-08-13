@@ -7,14 +7,14 @@ import "react-notifications-component/dist/theme.css";
 import "./App.scss";
 
 import { reducer } from "./utils/functions";
-import { CHANGE_PROBLEM_DETAILS, CHANGE_SERVER_MESSAGE, INITIAL_STATE, LANGUAGES, APP_LAYOUT } from "./utils/constants";
+import { CHANGE_PROBLEM_DETAILS, CHANGE_SERVER_MESSAGE, LANGUAGES, APP_LAYOUT } from "./utils/constants";
 
 import Selection from "./Features/Selection";
 
 export const appContext = React.createContext(null);
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const [state, dispatch] = useReducer(reducer, window.api.INITIAL_STATE);
 
   const [model, setModel] = useState(FlexLayout.Model.fromJson(APP_LAYOUT));
 
@@ -46,7 +46,6 @@ export default function App() {
     return <Component />
 
   }
-  console.log(window.api);
 
   return (
     <appContext.Provider value={{ state: state, dispatch: dispatch }}>

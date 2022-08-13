@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { React, useContext, useState } from "react";
 import { appContext } from "../App";
 
-export default function Dropdown({ list, label, displayed, actionType }) {
+export default function Dropdown({ list, label, displayed, setDisplayed }) {
   const context = useContext(appContext);
   const [dropdownStatus, setDropdownStatus] = useState(false);
   const alterDropdownStatus = () => {
@@ -41,7 +41,7 @@ export default function Dropdown({ list, label, displayed, actionType }) {
                 type="button"
                 className="dd-list-item"
                 onClick={() => {
-                  context.dispatch({ type: actionType, payload: idx });
+                  setDisplayed(idx);
                   alterDropdownStatus();
                 }}
                 key={idx}
