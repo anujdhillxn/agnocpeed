@@ -103,6 +103,7 @@ export default function Actions() {
         <button onClick={runCode}>Run</button>
         <button onClick={submitCode}>Submit</button>
         <button onClick={verifyCode}>Verify</button>
+        <button onClick={saveLayout}>Save Layout</button>
         <Dropdown
             label={"Language"}
             list={LANGUAGES}

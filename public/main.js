@@ -19,7 +19,7 @@ let contestId = null;
 let contestDir = null;
 let problemList = [];
 let problemDetails = {};
-let filesDir = path.join(__dirname, "files");
+let filesDir = path.join(__dirname, "../files");
 async function init() {
     browser = await puppeteer.launch({ headless: false });
     page = await browser.newPage();
