@@ -12,7 +12,8 @@
 
 # production
 /build
-/files
+/dist
+/extraResources
 
 # misc
 .DS_Store

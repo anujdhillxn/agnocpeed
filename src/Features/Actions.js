@@ -8,51 +8,6 @@ import axios from "axios";
 export default function Actions() {
     const { state, dispatch } = useContext(appContext);
 
-    const compileCode = async () => {
-        try {
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: "Compiling code..." });
-            let resp = await axios.get(
-                `http://127.0.0.1:5000/compile/${state.problemList[state.currentProblem]}/${LANGUAGES[state.language]}`
-            );
-            const serverMessage = resp.data.message;
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: serverMessage });
-            Store.addNotification({
-                ...notification,
-                title: "Compilation result",
-                message: resp.data.message ? "See the logs" : "Compiled successfully",
-                type: resp.data.message ? "danger" : "success",
-            });
-        } catch (e) {
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: e });
-        }
-    };
-
-    const runCode = async () => {
-        try {
-            state.problemDetails[state.problemList[state.currentProblem]].test_cases.forEach(
-                async (item, idx) => {
-                    let payload = {
-                        testCase: item,
-                    };
-                    let resp = await axios.post(
-                        `http://127.0.0.1:5000/run/${state.problemList[state.currentProblem]}/${LANGUAGES[state.language]}`,
-                        payload
-                    );
-                    let newDetails = { ...state.problemDetails };
-                    newDetails[state.problemList[state.currentProblem]].test_cases[idx]["result"] =
-                        resp.data.result;
-                    newDetails[state.problemList[state.currentProblem]].test_cases[idx]["comments"] =
-                        resp.data.comments;
-                    newDetails[state.problemList[state.currentProblem]].test_cases[idx]["verdict"] =
-                        resp.data.verdict;
-                    dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
-                }
-            );
-        } catch (e) {
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: e });
-        }
-    };
-
     const submitCode = async () => {
         try {
             let resp = await axios.get(
@@ -91,16 +46,20 @@ export default function Actions() {
         }
     };
 
+    const saveLayout = async () => {
+
+    }
+
     return <div className="actions">
         <Dropdown
             label={"Currently solving"}
             list={state.problemList}
             displayed={state.currentProblem}
-            actionType={CHANGE_PROBLEM}
+            setDisplayed={(idx) => { window.api.change(idx, LANGUAGES[state.language]) }}
         />
         <button onClick={resetCode}>Reset Code</button>
-        <button onClick={compileCode}>Compile</button>
-        <button onClick={runCode}>Run</button>
+        <button onClick={() => { window.api.compile(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Compile</button>
+        <button onClick={() => { window.api.run(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Run</button>
         <button onClick={submitCode}>Submit</button>
         <button onClick={verifyCode}>Verify</button>
         <button onClick={saveLayout}>Save Layout</button>
@@ -108,7 +67,7 @@ export default function Actions() {
             label={"Language"}
             list={LANGUAGES}
             displayed={state.language}
-            actionType={CHANGE_LANGUAGE}
+            setDisplayed={(idx) => { window.api.change(state.currentProblem, LANGUAGES[idx]) }}
         />
     </div>
 }

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { appContext } from "../App";
 import Dropdown from "../Components/Dropdown";
 import { CHANGE_BROWSER_READY, CHANGE_CONTEST_READY, CHANGE_PROBLEM, CHANGE_PROBLEM_LIST, PLATFORM_NAMES } from "../utils/constants";
@@ -13,20 +13,15 @@ export default function Selection() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [platformBox, setPlatformBox] = useState(0);
+  useEffect(() => {
+    window.api.getLoginMessage((data) => {
+      setStartMessage(data);
+    });
+  }, []);
 
   let initiateContest = async () => {
     try {
-      setStartMessage("Fetching list of problems.");
-      let resp = await window.api.start(contestBox);
-      const problems = resp.problemList;
-      console.log(resp);
-      dispatch({ type: CHANGE_PROBLEM_LIST, payload: problems });
-      if (resp.status) {
-        dispatch({ type: CHANGE_PROBLEM, payload: 0 });
-        dispatch({ type: CHANGE_CONTEST_READY, payload: true });
-      }
-      setStartMessage(`${state.problemList.length} problems found.`);
-
+      window.api.start(contestBox);
     } catch (e) {
       console.log(e);
     }
@@ -34,12 +29,8 @@ export default function Selection() {
 
   let login = async () => {
     try {
+      window.api.login(username, password, PLATFORM_NAMES[platformBox]);
 
-      setStartMessage("Logging in.");
-      const response = await window.api.login(username, password, PLATFORM_NAMES[platformBox]);
-      setStartMessage(response.message);
-      if (response.status)
-        dispatch({ type: CHANGE_BROWSER_READY, payload: true });
     } catch (e) {
       console.log(e);
     }

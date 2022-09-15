@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { spawnSync, spawn, exec } = require('child_process');
 const isDev = require('electron-is-dev');
 const puppeteer = require('puppeteer');
 
@@ -19,17 +19,117 @@ let contestId = null;
 let contestDir = null;
 let problemList = [];
 let problemDetails = {};
-let filesDir = path.join(__dirname, "../files");
+let currentProblem = null;
+let submissions = [];
+let log = "";
+let filesDir = isDev ? path.join(__dirname, "../extraResources/files") : path.join(process.resourcesPath, 'files');
+let boilerplate = isDev ? path.join(__dirname, "../extraResources/templates") : path.join(process.resourcesPath, 'templates');
+let configPath = isDev ? path.join(__dirname, "../extraResources/config.json") : path.join(process.resourcesPath, 'config.json');
+let config = null;
+
+let win;
+
+function setWebsite(newVal) {
+    if (newVal == website) return;
+    website = newVal;
+    win.webContents.send("getWebsite", website);
+}
+
+function setContestId(newVal) {
+
+    if (newVal == contestId) return;
+    contestId = newVal;
+    win.webContents.send("getContestId", contestId);
+}
+
+function setCurrentProblem(newVal) {
+
+    if (newVal == currentProblem) return;
+    currentProblem = newVal;
+    win.webContents.send("getCurrentProblem", currentProblem);
+}
+
+function setProblemDetails(newVal) {
+
+    if (newVal == problemDetails) return;
+    problemDetails = newVal;
+    win.webContents.send("getProblemDetails", problemDetails);
+}
+
+function setProblemList(newVal) {
+
+    if (newVal == problemList) return;
+    problemList = newVal;
+    win.webContents.send("getProblemList", problemList)
+}
+
+function setSubmissions(newVal) {
+
+    if (newVal == submissions) return;
+    submissions = newVal;
+    win.webContents.send("getSubmissions", submissions);
+}
+
+function setLog(newVal) {
+
+    if (newVal == log) return;
+    log = newVal;
+    win.webContents.send("getLog", log);
+}
+
+function setConfig(newVal) {
+    if (newVal == config) return;
+    config = newVal;
+    win.webContents.send("getConfig", config);
+    //TODO: save config to file
+}
+
+function getChromiumExecPath() {
+    return puppeteer.executablePath().replace('app.asar', 'app.asar.unpacked');
+}
+
 async function init() {
-    browser = await puppeteer.launch({ headless: false });
+    browser = await puppeteer.launch({ executablePath: getChromiumExecPath(), headless: false });
     page = await browser.newPage();
 }
 
-let win;
+function sendNotif(type) {
+    win.webContents.send("notif", type);
+}
+
+function areEqual(s1, s2) {
+    s1.replace(/\n/g, " ");
+    s2.replace(/\n/g, " ");
+    return s1 === s2 ? "AC" : "WA";
+}
+
+function addToLog(message) {
+    setLog(message + '\n' + log);
+}
+
+function runCommand(command, input = "", timeout = 0, err = (data) => { }, out = (data) => { }, close = (data) => { }) {
+    const res = exec(command, { encoding: 'utf8', input: input, timeout: timeout });
+    res.stderr.on('data', (data) => {
+        err(data);
+    })
+    res.stdout.on('data', (data) => {
+        out(data);
+    })
+    res.on('close', (code) => {
+        close(code);
+    })
+
+    //TODO: Handle run Command properly.
+}
+
 function createWindow() {
     if (!fs.existsSync(filesDir))
         exec(`mkdir ${filesDir}`);
     init();
+    fs.readFile(configPath, 'utf8', function (err, data) {
+        if (err) throw err;
+        config = JSON.parse(data);
+    });
     win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -40,7 +140,7 @@ function createWindow() {
         }
     })
     win.loadURL(isDev ? 'http://localhost:3000'
-        : `file://${path.join(__dirname, '../build/index.html')}`
+        : `file://${path.join(__dirname, './index.html')}`
     )
 }
 
@@ -61,92 +161,220 @@ app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
-ipcMain.handle("start", async (event, id) => {
-    let message = "Contest started. All the best!";
-    let status = 1;
+ipcMain.on("login", async (event, username, password, platform) => {
+    switch (platform) {
+        case CODEFORCES:
+
+            win.webContents.send("getLoginMessage", "Opening Website...");
+            try {
+                (await page).goto("https://codeforces.com/enter?back=%2F");
+                await page.waitForSelector("#handleOrEmail");
+            }
+            catch (e) {
+                win.webContents.send("getLoginMessage", "Unable to open website. " + e);
+                return;
+            }
+
+            win.webContents.send("getLoginMessage", "Validating credentials...");
+            try {
+
+                await page.type("#handleOrEmail", username);
+                await page.type("#password", password);
+                await page.click('input[type=submit]');
+                await page.waitForXPath('//*[contains(text(), "Logout")]');
+                win.webContents.send("getLoginMessage", "Login successful.");
+            }
+            catch (e) {
+                win.webContents.send("getLoginMessage", "Login failed. " + e);
+                return;
+            }
+
+            break;
+        case ATCODER:
+
+            win.webContents.send("getLoginMessage", "Opening Website...");
+            try {
+                (await page).goto("https://atcoder.jp/login?continue=https%3A%2F%2Fatcoder.jp%2F");
+                await page.waitForSelector("#username");
+            }
+            catch (e) {
+                win.webContents.send("getLoginMessage", "Unable to open website. " + e);
+                return;
+            }
+
+            win.webContents.send("getLoginMessage", "Validating credentials...");
+            try {
+                await page.type("#username", username);
+                await page.type("#password", password);
+                await page.click("#submit");
+                await page.waitForXPath('//*[contains(text(), "Sign Out")]');
+                win.webContents.send("getLoginMessage", "Login successful.");
+
+            }
+            catch (e) {
+                win.webContents.send("getLoginMessage", "Login failed. " + e);
+                return;
+            }
+
+            break;
+        case CODECHEF:
+            win.webContents.send("getLoginMessage", "The support for this platform is not available, yet.");
+            return;
+        case PRACTICE:
+            win.webContents.send("getLoginMessage", "Choose name of practice session.");
+            break;
+        default:
+            win.webContents.send("getLoginMessage", "Invalid platform.");
+            return;
+    }
+    setWebsite(platform);
+});
+
+ipcMain.on("start", async (event, id) => {
     if (website == null) {
-        message = "Select a platform first!";
-        status = 0;
+        win.webContents.send("getLoginMessage", "Select a platform first!");
+        return;
     }
     else {
-        contestId = id;
-        contestDir = path.join(filesDir, `${website}_${contestId}`);
+        contestDir = path.join(filesDir, `${website}_${id}`);
         let testcases = path.join(contestDir, "testcases.json");
         if (!fs.existsSync(contestDir)) {
-            exec(`mkdir ${contestDir}`);
-            exec(`echo "{}" > ${testcases}`);
+            runCommand(`mkdir ${contestDir}`);
+            runCommand(`echo "{}" > ${testcases}`);
         }
         fs.readFile(testcases, 'utf8', function (err, data) {
             if (err) throw err;
             problemDetails = JSON.parse(data);
         });
-        switch (website) {
-            case CODEFORCES:
-                await page.goto(`https://codeforces.com/contest/${contestId}`);
-                let items = await page.$$('.id');
-                problemList = [];
-                for (let i = 0; i < items.length; i++) {
-                    let linkText = await items[i].$('a');
-                    let problemId = await linkText.evaluate(el => el.innerText);
-                    problemList.push(problemId);
-                }
-                console.log(problemList);
-                break;
-            default:
-                message = "Invalid platform."
-                status = 0;
-                break;
+        setProblemList([]);
+        win.webContents.send("getLoginMessage", "Collecting tasks...");
+        try {
+            switch (website) {
+                case CODEFORCES:
+                    await page.goto(`https://codeforces.com/contest/${id}`);
+                    var items = await page.$$('.id');
+                    for (let i = 0; i < items.length; i++) {
+                        let linkText = await items[i].$('a');
+                        let problemId = await linkText.evaluate(el => el.innerText);
+                        setProblemList([...problemList, problemId]);
+                    }
+                    break;
+                case ATCODER:
+                    await page.goto(`https://atcoder.jp/contests/${id}/tasks`);
+                    await page.waitForSelector('tbody');
+                    const nodeChildren = await page.$eval('tbody', (uiElement) => {
+                        return uiElement.children;
+                    });
+                    for (let i = 0; i < Object.keys(nodeChildren).length; i++) setProblemList([...problemList, String.fromCharCode(i + 65)]);
+                    break;
+                case PRACTICE:
+                    setProblemList(['A', 'B', 'C', 'D']);
+                    for (const p in problemList) {
+                        setProblemDetails({
+                            ...problemDetails,
+                            p: {
+                                testcases: [{
+                                    input: "", output: "",
+                                    result: "", verdict: "", comments: ""
+                                }]
+                            }
+                        });
+                    }
+                    break;
+                default:
+                    win.webContents.send("getLoginMessage", "Invalid platform!");
+                    return;
+            }
+        }
+        catch (e) {
+            win.webContents.send("getLoginMessage", "Error. Try again. " + e);
+            return;
         }
     }
-    return { status: status, problemList: problemList, message: message };
+    setContestId(id);
 });
 
-ipcMain.handle("login", async (event, username, password, platform) => {
-    let message = "Logged in successfully."
-    let status = 1;
-    switch (platform) {
-        case CODEFORCES:
-            (await page).goto("https://codeforces.com/enter?back=%2F");
-            await page.waitForSelector("#handleOrEmail");
-            await page.type("#handleOrEmail", username);
-            await page.type("#password", password);
-            await page.click('input[type=submit]');
 
-            try {
-                await page.waitForXPath('//*[contains(text(), "Logout")]');
-            }
-            catch (e) {
-                message = "Unable to log in. Either the network is too slow or username/password does not match."
-                status = 0;
-            }
-            break;
-        case ATCODER:
-            (await page).goto("https://atcoder.jp/login?continue=https%3A%2F%2Fatcoder.jp%2F");
-            await page.waitForSelector("#username");
-            await page.type("#username", username);
-            await page.type("#password", password);
-            await page.click("#submit");
-            try {
-                await page.waitForXPath('//*[contains(text(), "Sign Out")]');
-            }
-            catch (e) {
-                message = "Unable to log in. Either the network is too slow or username/password does not match."
-                status = 0;
-            }
-            break;
-        case CODECHEF:
-            message = "Unavailable."
-            status = 0;
-            break;
-        case PRACTICE:
-            message = "Choose practice session name."
-            break;
-        default:
-            message = "Invalid platform."
-            status = 0;
-            break;
-
+ipcMain.on("change", async (event, problemId, lang) => {
+    const problemName = problemList[problemId];
+    let fileLoc = path.join(contestDir, `${problemName}.${lang}`);
+    if (!fs.existsSync(fileLoc)) {
+        runCommand(`cp ${path.join(boilerplate, config.languages[lang].template)} ${fileLoc}`);
     }
-    if (status) website = platform;
-    return { status: status, message: message };
+    runCommand(`${config.editor} -g --goto ${fileLoc}:44:4`);
+    if (!problemDetails.hasOwnProperty(problemName) || problemDetails[problemName]["testCases"].length <= 1) {
+        try {
+            if (website === CODEFORCES) {
+                await page.goto(`https://codeforces.com/contest/${contestId}/problem/${problemName}`);
+                let testCases = [{
+                    input: "", output: "", result: "", verdict: "", comments: ""
+                }];
+                inputTexts = await page.$$('.input');
+                outputTexts = await page.$$('.output');
+                for (let i = 0; i < inputTexts.length; i++) {
+                    let input = await inputTexts[i].$eval('pre', el => el.innerText);
+                    let output = await outputTexts[i].$eval('pre', el => el.innerText);
+                    testCases.push({ input: input, output: output, result: "", verdict: "", comments: "" });
+                }
+                setProblemDetails({ ...problemDetails, [problemName]: { testCases: testCases } });
+            }
+        }
+        catch (e) {
+            addToLog("Error fetching test cases. Try again. " + e);
+            return;
+        }
+    }
+    setCurrentProblem(problemId);
+    addToLog(`Solving problem ${problemName}`);
+
 });
+
+ipcMain.on("compile", async (event, problemId, lang) => {
+    let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+    if (!config.languages[lang].compiled) {
+        addToLog("No need to compile.");
+        sendNotif(0);
+    }
+    else {
+        let command = "";
+        if (lang === "cpp")
+            command = config.languages[lang].compileOptions + ` ${fileLoc} -o ${fileLoc}.exe`
+        runCommand(command, "", 0, (data) => { addToLog(data); sendNotif(1) }, () => { }, (code) => {
+            if (code == 0)
+                sendNotif(0);
+        });
+    }
+})
+
+ipcMain.on("run", async (event, problemId, lang) => {
+    let fileLoc;
+    if (lang === "cpp") {
+        fileLoc = path.join(contestDir, `${problemId}.${lang}.exe`);
+    }
+    else {
+        fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+    }
+    if (!fs.existsSync(fileLoc)) {
+        addToLog("Executable not found.");
+        return 0;
+    }
+    else {
+        let command = config.languages[lang].runOptions + `${fileLoc}`;
+        for (let i = 0; i < problemDetails[problemId].testCases.length; i++) {
+            const testCase = problemDetails[problemId].testCases[i].input;
+            runCommand(command, testCase, 5, (err) => {
+                let newDetails = { ...problemDetails };
+                newDetails[problemId].testCases[i].comments = err;
+                setProblemDetails(newDetails);
+            }, (out) => {
+                let newDetails = { ...problemDetails };
+                newDetails[problemId].testCases[i].result = out;
+                setProblemDetails(newDetails);
+            }, (code) => {
+                let newDetails = { ...problemDetails };
+                newDetails[problemId].testCases[i].verdict = code;
+                setProblemDetails(newDetails);
+            });
+        }
+    }
+})

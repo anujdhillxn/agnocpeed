@@ -5,7 +5,7 @@ import { getColor } from "../utils/functions";
 
 export default function TestCases() {
   const { state, dispatch } = useContext(appContext);
-
+  console.log(state.currentProblem, state.problemList, state.problemDetails);
   if (
     state.currentProblem === null ||
     state.problemList === null ||
@@ -16,7 +16,7 @@ export default function TestCases() {
   else {
     return (
       <div className="test-cases">
-        {state.problemDetails[state.problemList[state.currentProblem]]["test_cases"].map(
+        {state.problemDetails[state.problemList[state.currentProblem]]["testCases"].map(
           (item, idx) => {
             return (
               <div className="test-case">
@@ -26,7 +26,7 @@ export default function TestCases() {
                     value={item.input}
                     onChange={(e) => {
                       let newDetails = { ...state.problemDetails };
-                      newDetails[state.problemList[state.currentProblem]]["test_cases"][
+                      newDetails[state.problemList[state.currentProblem]]["testCases"][
                         idx
                       ]["input"] = e.target.value;
                       dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
@@ -39,7 +39,7 @@ export default function TestCases() {
                     value={item.output}
                     onChange={(e) => {
                       let newDetails = { ...state.problemDetails };
-                      newDetails[state.problemList[state.currentProblem]]["test_cases"][
+                      newDetails[state.problemList[state.currentProblem]]["testCases"][
                         idx
                       ]["output"] = e.target.value;
                       dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });

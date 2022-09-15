@@ -8,6 +8,6 @@ export default function Log() {
         <button onClick={() => {
             dispatch({ type: CHANGE_SERVER_MESSAGE, payload: "" });
         }}>Clear</button>
-        <code>{state.serverMessage}</code>
+        <code>{state.log}</code>
     </div>
 }
