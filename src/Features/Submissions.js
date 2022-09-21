@@ -5,14 +5,6 @@ import { CHANGE_SUBMISSIONS } from "../utils/constants";
 import { getColor } from "../utils/functions";
 export default function Submissions() {
     const { state, dispatch } = useContext(appContext);
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            const resp = await axios.get("http://127.0.0.1:5000/submissions");
-            const newSubmissions = resp.data.submissions;
-            if (resp.data.submissions.length) dispatch({ type: CHANGE_SUBMISSIONS, payload: newSubmissions });
-        }, 10000);
-        return () => clearInterval(interval);
-    }, [dispatch]);
     return <div className="submissions">
         <table>
             <tr>

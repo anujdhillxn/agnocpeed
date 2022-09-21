@@ -32,3 +32,12 @@ export const getColor = (verdict) => {
         return "red";
     return "yellow";
 };
+
+export const serialize = (obj) => {
+    console.log(obj);
+    if (typeof obj === "object") {
+        delete obj.component;
+        const keys = Object.keys(obj);
+        keys.forEach((item) => serialize(obj[item]));
+    }
+}

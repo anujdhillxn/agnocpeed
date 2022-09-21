@@ -11,15 +11,23 @@ import { CHANGE_PROBLEM_DETAILS, CHANGE_SERVER_MESSAGE, LANGUAGES, APP_LAYOUT, I
 import { Store } from "react-notifications-component";
 import notification from './Components/notif';
 import Selection from "./Features/Selection";
+import Submissions from "./Features/Submissions";
+import Actions from "./Features/Actions";
+import Log from "./Features/Log";
+import Statement from "./Features/Statement";
 
 export const appContext = React.createContext(null);
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-
   const [model, setModel] = useState(FlexLayout.Model.fromJson(APP_LAYOUT));
-
   useEffect(() => {
+
+    window.api.getConfig((data) => {
+      console.log(data);
+      if (data.layout);
+      setModel(FlexLayout.Model.fromJson(data.layout));
+    });
 
     window.api.getCurrentProblem((data) => {
       dispatch({ type: CHANGE_PROBLEM, payload: data });
@@ -53,35 +61,38 @@ export default function App() {
     window.api.notif((data) => {
       Store.addNotification({
         ...notification,
-        title: "Compilation result",
-        message: data ? "See the logs" : "Compiled successfully",
-        type: data ? "danger" : "success",
+        title: data.message,
+        message: data.message,
+        type: data.danger ? "danger" : "success",
       });
     })
   }, []);
 
 
   const factory = (node) => {
-    const Component = node.getComponent();
-    if (Component === "text") {
+    const name = node.getName();
+    if (name === "Standings") {
       return (<div className="panel">Panel {node.getName()}</div>);
     }
-    return <Component />
-
+    if (name === "Actions") return <Actions model={model} />
+    else if (name === "Log") return <Log />
+    else if (name === "Submissions") return <Submissions />
+    else if (name === "Statement") return <Statement />
+    else return <TestCases />
   }
 
   return (
     <appContext.Provider value={{ state: state, dispatch: dispatch }}>
       <div className="App">
         <ReactNotifications />
-        {state.contestId == null || state.website == null ?
+        {state.contestId == null || state.website == null || !state.problemList ?
           <Selection />
           :
           <FlexLayout.Layout
             model={model}
             factory={factory} />
+
         }
-        <TestCases />
       </div>
     </appContext.Provider>
 

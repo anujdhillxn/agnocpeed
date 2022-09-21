@@ -5,7 +5,6 @@ import { getColor } from "../utils/functions";
 
 export default function TestCases() {
   const { state, dispatch } = useContext(appContext);
-  console.log(state.currentProblem, state.problemList, state.problemDetails);
   if (
     state.currentProblem === null ||
     state.problemList === null ||

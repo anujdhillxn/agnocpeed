@@ -81,7 +81,12 @@ function setConfig(newVal) {
     if (newVal == config) return;
     config = newVal;
     win.webContents.send("getConfig", config);
-    //TODO: save config to file
+    const jsonConfig = JSON.stringify(config);
+    fs.writeFile(configPath, jsonConfig, function (err) {
+        if (err) {
+            console.log(err);
+        }
+    });
 }
 
 function getChromiumExecPath() {
@@ -89,12 +94,12 @@ function getChromiumExecPath() {
 }
 
 async function init() {
-    browser = await puppeteer.launch({ executablePath: getChromiumExecPath(), headless: false });
+    browser = await puppeteer.launch({ executablePath: getChromiumExecPath(), headless: true });
     page = await browser.newPage();
 }
 
-function sendNotif(type) {
-    win.webContents.send("notif", type);
+function sendNotif(type, message) {
+    win.webContents.send("notif", { message: message, danger: type });
 }
 
 function areEqual(s1, s2) {
@@ -128,7 +133,7 @@ function createWindow() {
     init();
     fs.readFile(configPath, 'utf8', function (err, data) {
         if (err) throw err;
-        config = JSON.parse(data);
+        setConfig(JSON.parse(data));
     });
     win = new BrowserWindow({
         width: 800,
@@ -231,6 +236,10 @@ ipcMain.on("login", async (event, username, password, platform) => {
 });
 
 ipcMain.on("start", async (event, id) => {
+    fs.readFile(configPath, 'utf8', function (err, data) {
+        if (err) throw err;
+        setConfig(JSON.parse(data));
+    });
     if (website == null) {
         win.webContents.send("getLoginMessage", "Select a platform first!");
         return;
@@ -272,7 +281,7 @@ ipcMain.on("start", async (event, id) => {
                     for (const p in problemList) {
                         setProblemDetails({
                             ...problemDetails,
-                            p: {
+                            [p]: {
                                 testcases: [{
                                     input: "", output: "",
                                     result: "", verdict: "", comments: ""
@@ -294,7 +303,6 @@ ipcMain.on("start", async (event, id) => {
     setContestId(id);
 });
 
-
 ipcMain.on("change", async (event, problemId, lang) => {
     const problemName = problemList[problemId];
     let fileLoc = path.join(contestDir, `${problemName}.${lang}`);
@@ -302,28 +310,71 @@ ipcMain.on("change", async (event, problemId, lang) => {
         runCommand(`cp ${path.join(boilerplate, config.languages[lang].template)} ${fileLoc}`);
     }
     runCommand(`${config.editor} -g --goto ${fileLoc}:44:4`);
-    if (!problemDetails.hasOwnProperty(problemName) || problemDetails[problemName]["testCases"].length <= 1) {
+    let testCases = [];
+    if (!problemDetails.hasOwnProperty(problemName) || problemDetails[problemName]["testCases"].length === 0) {
+
         try {
-            if (website === CODEFORCES) {
-                await page.goto(`https://codeforces.com/contest/${contestId}/problem/${problemName}`);
-                let testCases = [{
-                    input: "", output: "", result: "", verdict: "", comments: ""
-                }];
-                inputTexts = await page.$$('.input');
-                outputTexts = await page.$$('.output');
-                for (let i = 0; i < inputTexts.length; i++) {
-                    let input = await inputTexts[i].$eval('pre', el => el.innerText);
-                    let output = await outputTexts[i].$eval('pre', el => el.innerText);
-                    testCases.push({ input: input, output: output, result: "", verdict: "", comments: "" });
-                }
-                setProblemDetails({ ...problemDetails, [problemName]: { testCases: testCases } });
+            switch (website) {
+                case CODEFORCES:
+                    await page.goto(`https://codeforces.com/contest/${contestId}/problem/${problemName}`);
+
+                    inputTexts = await page.$$('.input');
+                    outputTexts = await page.$$('.output');
+                    for (let i = 0; i < inputTexts.length; i++) {
+                        let input = await inputTexts[i].$eval('pre', el => el.innerText);
+                        let output = await outputTexts[i].$eval('pre', el => el.innerText);
+                        testCases.push({ input: input, output: output, result: "", verdict: "", comments: "" });
+                    }
+                    setProblemDetails({ ...problemDetails, [problemName]: { testCases: testCases } });
+                    break;
+
+                case ATCODER:
+                    await page.goto(`https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`);
+                    let count = 0, started = false, index = 0, toInput = true;
+                    while (count < 50) {
+                        try {
+                            let data = await page.$eval(`#pre-sample${count}`, el => el.textContent);
+                            console.log(count, data);
+                            if (toInput) {
+                                testCases.push({
+                                    input: "", output: "",
+                                    result: "", verdict: "", comments: ""
+                                });
+                                testCases[index].input = data;
+                                toInput = false;
+                            }
+                            else {
+                                testCases[index].output = data;
+                                index++;
+                                toInput = true;
+                            }
+                            started = true;
+                        }
+                        catch (e) {
+                            console.log(e);
+                            if (started) break;
+                        }
+                        count++;
+                    }
+                    testCases = [...testCases.slice(testCases.length / 2)];
+
+                    break;
+                default:
+                    break;
             }
+
         }
         catch (e) {
             addToLog("Error fetching test cases. Try again. " + e);
             return;
         }
     }
+    const statementLoc = path.join(contestDir, `${problemName}.pdf`);
+    if (!fs.existsSync(statementLoc)) {
+        await page.goto(`https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`);
+        await page.pdf({ path: statementLoc, format: 'A4' });
+    }
+    setProblemDetails({ ...problemDetails, [problemName]: { testCases: testCases, problemStatement: statementLoc } });
     setCurrentProblem(problemId);
     addToLog(`Solving problem ${problemName}`);
 
@@ -333,15 +384,15 @@ ipcMain.on("compile", async (event, problemId, lang) => {
     let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
     if (!config.languages[lang].compiled) {
         addToLog("No need to compile.");
-        sendNotif(0);
+        sendNotif(0, "No need to compile.");
     }
     else {
         let command = "";
         if (lang === "cpp")
             command = config.languages[lang].compileOptions + ` ${fileLoc} -o ${fileLoc}.exe`
-        runCommand(command, "", 0, (data) => { addToLog(data); sendNotif(1) }, () => { }, (code) => {
+        runCommand(command, "", 0, (data) => { addToLog(data); sendNotif(1, "Compilation failed. Check the log for errors.") }, (data) => { }, (code) => {
             if (code == 0)
-                sendNotif(0);
+                sendNotif(0, "Compiled successfully.");
         });
     }
 })
@@ -371,10 +422,60 @@ ipcMain.on("run", async (event, problemId, lang) => {
                 newDetails[problemId].testCases[i].result = out;
                 setProblemDetails(newDetails);
             }, (code) => {
+                console.log(code);
+                sendNotif(0, "Execution Complete");
                 let newDetails = { ...problemDetails };
                 newDetails[problemId].testCases[i].verdict = code;
                 setProblemDetails(newDetails);
             });
         }
     }
+})
+
+ipcMain.on("reset", async (event, problemId, lang) => {
+    let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+    runCommand(`cp ${path.join(boilerplate, config.languages[lang].template)} ${fileLoc}`);
+    sendNotif(0, "File cleared.");
+})
+
+ipcMain.on("submit", async (event, problemId, lang) => {
+    let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+    switch (website) {
+        case CODEFORCES:
+            await page.goto(`https://codeforces.com/contest/${contestId}/submit/${problemId}`);
+            if (lang === "cpp")
+                await page.select('select[name="programTypeId"]', '73');
+            else
+                await page.select('select[name="programTypeId"]', '70');
+            var uploadButton = await page.$("input[type=file]");
+            await uploadButton.uploadFile(fileLoc);
+            await page.click("input[value=Submit");
+            sendNotif(0, "Code submitted.");
+            break;
+        case ATCODER:
+            await page.goto(`https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemId}`);
+            if (lang === "cpp")
+                await page.select('select[name="data.LanguageId"', '4003');
+            else
+                await page.select('select[name="data.LanguageId"', '4006');
+            const [fileChooser] = await Promise.all([
+                page.waitForFileChooser(),
+                page.click('#btn-open-file'),
+            ]);
+            await fileChooser.accept([fileLoc]);
+            await page.click("#submit");
+            sendNotif(0, "Code submitted.");
+            break;
+        default:
+            addToLog("Invalid platform.");
+            sendNotif(1, "Unable to submit. Try again.");
+    }
+});
+
+ipcMain.on("saveLayout", async (event, newLayout) => {
+    console.log(newLayout);
+    let newConfig = { ...config };
+    newConfig.layout = newLayout;
+    setConfig(newConfig);
+    sendNotif(0, "Layout saved.");
 })

@@ -28,7 +28,7 @@
     "asar": true,
     "asarUnpack": "node_modules/puppeteer/.local-chromium/**/*",
     "extraResources": [
-      "./extraResources/**"
+      "./extraResources"
     ]
   },
   "devDependencies": {

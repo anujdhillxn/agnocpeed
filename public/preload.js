@@ -7,6 +7,9 @@ const API = {
     change: (problemId, lang) => ipcRenderer.send("change", problemId, lang),
     compile: (problemId, lang) => ipcRenderer.send("compile", problemId, lang),
     run: (problemId, lang) => ipcRenderer.send("run", problemId, lang),
+    reset: (problemId, lang) => ipcRenderer.send("reset", problemId, lang),
+    submit: (problemId, lang) => ipcRenderer.send("submit", problemId, lang),
+    saveLayout: (newLayout) => ipcRenderer.send("saveLayout", newLayout),
     getLoginMessage: (callback) => ipcRenderer.on("getLoginMessage", (event, args) => {
         callback(args);
     }),
@@ -29,6 +32,9 @@ const API = {
         callback(args);
     }),
     notif: (callback) => ipcRenderer.on("notif", (event, args) => {
+        callback(args);
+    }),
+    getConfig: (callback) => ipcRenderer.on("getConfig", (event, args) => {
         callback(args);
     }),
 
