@@ -4,15 +4,17 @@
   "private": true,
   "dependencies": {
     "@electron/remote": "^2.0.8",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
     "@fortawesome/free-solid-svg-icons": "^6.1.2",
     "@fortawesome/react-fontawesome": "^0.2.0",
+    "@mui/icons-material": "^5.10.9",
+    "@mui/material": "^5.10.10",
+    "@pdftron/webviewer": "^8.9.0",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
-    "axios": "^0.27.2",
     "builder-util": "^23.5.0",
-    "concurrently": "^7.3.0",
-    "cross-env": "^7.0.3",
     "electron-is-dev": "^2.0.0",
     "flexlayout-react": "^0.7.4",
     "node-sass": "^7.0.1",
@@ -21,7 +23,6 @@
     "react-dom": "^18.2.0",
     "react-notifications-component": "^4.0.1",
     "react-scripts": "5.0.1",
-    "wait-on": "^6.0.1",
     "web-vitals": "^2.1.4"
   },
   "build": {
@@ -32,8 +33,11 @@
     ]
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.12",
     "electron": "^20.0.0",
-    "electron-builder": "^23.3.3"
+    "electron-builder": "^23.3.3",
+    "postcss": "^8.4.18",
+    "tailwindcss": "^3.2.1"
   },
   "main": "public/main.js",
   "homepage": "./",
@@ -42,9 +46,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "electron:serve": "concurrently -k \"cross-env BROWSER=none npm start\" \"npm run electron:start\"",
     "electron:build": "npm run build && electron-builder -c.extraMetadata.main=build/main.js",
-    "electron:start": "wait-on tcp:3000 && electron ."
+    "electron:start": "electron ."
   },
   "eslintConfig": {
     "extends": [

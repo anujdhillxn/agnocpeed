@@ -1,10 +1,40 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { appContext } from "../App";
-
+import WebViewer, { Core } from "@pdftron/webviewer";
 export default function Statement() {
-    const { state } = useContext(appContext);
-
-    console.log(`file://${state.problemDetails[state.problemList[state.currentProblem]].problemStatement}`);
-    return <div><object data={`file://${state.problemDetails[state.problemList[state.currentProblem]].problemStatement}`} type="application/pdf" width="100%" height="720">
-    </object></div>
+  const { state } = useContext(appContext);
+  const viewer = useRef(null);
+  const [instance, setInstance] = useState(null);
+  useEffect(() => {
+    WebViewer(
+      {
+        path: "./lib",
+      },
+      viewer.current
+    ).then((obj) => {
+      const { documentViewer } = obj.Core;
+      documentViewer.addEventListener("documentLoaded", () => {
+        obj.UI.setFitMode(obj.UI.FitMode.FitWidth);
+      });
+      setInstance(obj);
+      if (state.currentProblem !== null)
+        obj.loadDocument(
+          state.problemDetails[state.problemList[state.currentProblem]]
+            .statement
+        );
+    });
+  }, []);
+  useEffect(() => {
+    if (instance)
+      instance.loadDocument(
+        state.problemDetails[state.problemList[state.currentProblem]].statement
+      );
+  }, [state.currentProblem]);
+  return (
+    <div
+      className="webviewer"
+      style={{ height: "100%", width: "100%" }}
+      ref={viewer}
+    ></div>
+  );
 }

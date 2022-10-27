@@ -1,49 +1,118 @@
+import {
+  Build,
+  DoneAll,
+  PlayCircleFilledOutlined,
+  ReplayRounded,
+  SaveAs,
+  UploadFile,
+  UploadFileRounded,
+} from "@mui/icons-material";
+import { Box, Button, ButtonGroup, Container } from "@mui/material";
 import { useContext } from "react";
 import { appContext } from "../App";
+import CustomButton from "../Components/CustomButton";
 import Dropdown from "../Components/Dropdown";
-import { Store } from "react-notifications-component";
-import notification from '../Components/notif';
-import { CHANGE_LANGUAGE, CHANGE_PROBLEM, CHANGE_PROBLEM_DETAILS, CHANGE_SERVER_MESSAGE, LANGUAGES } from "../utils/constants";
-import axios from "axios";
+import {
+  CHANGE_LANGUAGE,
+  CHANGE_PROBLEM,
+  CHANGE_PROBLEM_DETAILS,
+  CHANGE_SERVER_MESSAGE,
+  LANGUAGES,
+} from "../utils/constants";
 import { serialize } from "../utils/functions";
 export default function Actions({ model }) {
-    const { state, dispatch } = useContext(appContext);
+  const { state, dispatch } = useContext(appContext);
 
-    const verifyCode = async () => {
-        try {
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: "Stress testing the solution..." });
-            let resp = await axios.get(
-                `http://127.0.0.1:5000/verify/${state.problemList[state.currentProblem]}/${LANGUAGES[state.language]}`
+  const verifyCode = async () => {
+    try {
+    } catch (e) {
+      dispatch({ type: CHANGE_SERVER_MESSAGE, payload: e });
+    }
+  };
+
+  return (
+    <div className="actions">
+      <Container>
+        {" "}
+        <CustomButton
+          title={"Reset Code"}
+          handleClick={() => {
+            window.api.reset(
+              state.problemList[state.currentProblem],
+              LANGUAGES[state.language]
             );
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: resp.data.status + resp.data.failedInputs });
-        } catch (e) {
-            dispatch({ type: CHANGE_SERVER_MESSAGE, payload: e });
-        }
-    };
-
-    return <div className="actions">
-        <Dropdown
-            label={"Currently solving"}
-            list={state.problemList}
-            displayed={state.currentProblem}
-            setDisplayed={(idx) => { window.api.change(idx, LANGUAGES[state.language]) }}
-        />
-        <button onClick={() => { window.api.reset(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Reset Code</button>
-        <button onClick={() => { window.api.compile(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Compile</button>
-        <button onClick={() => { window.api.run(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Run</button>
-        <button onClick={() => { window.api.submit(state.problemList[state.currentProblem], LANGUAGES[state.language]) }}>Submit</button>
-        <button onClick={verifyCode}>Verify</button>
-        <button onClick={() => {
+          }}
+        >
+          <ReplayRounded />
+        </CustomButton>
+        <CustomButton
+          title={"Compile"}
+          handleClick={() => {
+            window.api.compile(
+              state.problemList[state.currentProblem],
+              LANGUAGES[state.language]
+            );
+          }}
+        >
+          <Build />
+        </CustomButton>
+        <CustomButton
+          title={"Run"}
+          handleClick={() => {
+            window.api.run(
+              state.problemList[state.currentProblem],
+              LANGUAGES[state.language]
+            );
+          }}
+        >
+          <PlayCircleFilledOutlined />
+        </CustomButton>
+        <CustomButton
+          title={"Submit"}
+          handleClick={() => {
+            window.api.submit(
+              state.problemList[state.currentProblem],
+              LANGUAGES[state.language]
+            );
+          }}
+        >
+          <UploadFileRounded />
+        </CustomButton>
+        <CustomButton title={"Verify"} handleClick={verifyCode}>
+          <DoneAll />
+        </CustomButton>
+        <CustomButton
+          title={"Save Layout"}
+          handleClick={() => {
             let modelJson = model.toJson();
             serialize(modelJson);
             console.log(modelJson);
             window.api.saveLayout(modelJson);
-        }}>Save Layout</button>
+          }}
+        >
+          <SaveAs />
+        </CustomButton>
+      </Container>
+      <Container>
         <Dropdown
-            label={"Language"}
-            list={LANGUAGES}
-            displayed={state.language}
-            setDisplayed={(idx) => { window.api.change(state.currentProblem, LANGUAGES[idx]) }}
+          handleChange={(e) => {
+            window.api.change(e.target.value, LANGUAGES[state.language]);
+          }}
+          value={state.currentProblem}
+          label={"Currently solving"}
+          items={state.problemList}
+          fullwidth={true}
         />
+        <Dropdown
+          handleChange={(e) => {
+            window.api.change(state.currentProblem, LANGUAGES[e.target.value]);
+          }}
+          value={state.language}
+          label={"Language"}
+          items={LANGUAGES}
+          fullwidth={true}
+        />
+      </Container>
     </div>
+  );
 }

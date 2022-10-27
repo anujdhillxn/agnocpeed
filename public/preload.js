@@ -9,7 +9,10 @@ const API = {
     run: (problemId, lang) => ipcRenderer.send("run", problemId, lang),
     reset: (problemId, lang) => ipcRenderer.send("reset", problemId, lang),
     submit: (problemId, lang) => ipcRenderer.send("submit", problemId, lang),
+    changeTestCases: (problemId, idx, box, text) => ipcRenderer.send("changeTestCases", problemId, idx, box, text),
+    addNewTestCase: (problemId) => ipcRenderer.send("addNewTestCase", problemId),
     saveLayout: (newLayout) => ipcRenderer.send("saveLayout", newLayout),
+    clearLog: () => ipcRenderer.send("clearLog"),
     getLoginMessage: (callback) => ipcRenderer.on("getLoginMessage", (event, args) => {
         callback(args);
     }),
@@ -35,6 +38,12 @@ const API = {
         callback(args);
     }),
     getConfig: (callback) => ipcRenderer.on("getConfig", (event, args) => {
+        callback(args);
+    }),
+    getSubmissions: (callback) => ipcRenderer.on("getSubmissions", (event, args) => {
+        callback(args);
+    }),
+    getStandings: (callback) => ipcRenderer.on("getStandings", (event, args) => {
         callback(args);
     }),
 

@@ -1,8 +1,10 @@
+import { Button, Fab, TextField } from "@mui/material";
 import { useContext } from "react";
 import { appContext } from "../App";
 import { CHANGE_PROBLEM_DETAILS } from "../utils/constants";
 import { getColor } from "../utils/functions";
-
+import AddIcon from "@mui/icons-material/Add";
+import CustomButton from "../Components/CustomButton";
 export default function TestCases() {
   const { state, dispatch } = useContext(appContext);
   if (
@@ -14,40 +16,67 @@ export default function TestCases() {
     return <div>No test cases found</div>;
   else {
     return (
-      <div className="test-cases">
-        {state.problemDetails[state.problemList[state.currentProblem]]["testCases"].map(
-          (item, idx) => {
+      <div>
+        <CustomButton
+          title={"Add New Test Case"}
+          handleClick={() => {
+            window.api.addNewTestCase(state.problemList[state.currentProblem]);
+          }}
+        >
+          <AddIcon />
+        </CustomButton>
+        <div
+          className="test-cases"
+          style={{ display: "flex", flexDirection: "column" }}
+        >
+          {state.problemDetails[state.problemList[state.currentProblem]][
+            "testCases"
+          ].map((item, idx) => {
             return (
-              <div className="test-case">
+              <div className="test-case" style={{ display: "flex" }}>
                 <div className="input">
-                  <label>Input: </label>
-                  <textarea
+                  <TextField
+                    rows={7}
+                    multiline
+                    margin="normal"
+                    label={"Input"}
                     value={item.input}
                     onChange={(e) => {
-                      let newDetails = { ...state.problemDetails };
-                      newDetails[state.problemList[state.currentProblem]]["testCases"][
-                        idx
-                      ]["input"] = e.target.value;
-                      dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
+                      window.api.changeTestCases(
+                        state.problemList[state.currentProblem],
+                        idx,
+                        "input",
+                        e.target.value
+                      );
                     }}
-                  ></textarea>
+                  />
                 </div>
                 <div className="output">
-                  <label>Expected output: </label>
-                  <textarea
+                  <TextField
+                    rows={7}
+                    multiline
+                    margin="normal"
+                    label={"Expected output"}
                     value={item.output}
                     onChange={(e) => {
-                      let newDetails = { ...state.problemDetails };
-                      newDetails[state.problemList[state.currentProblem]]["testCases"][
-                        idx
-                      ]["output"] = e.target.value;
-                      dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: newDetails });
+                      window.api.changeTestCases(
+                        state.problemList[state.currentProblem],
+                        idx,
+                        "output",
+                        e.target.value
+                      );
                     }}
-                  ></textarea>
+                  />
                 </div>
                 <div className="result">
-                  <label>Your Output: </label>
-                  <textarea value={item.result} readOnly></textarea>
+                  <TextField
+                    rows={7}
+                    multiline
+                    margin="normal"
+                    label={"Your output"}
+                    value={item.result}
+                    disabled
+                  />
                 </div>
                 <div className="verdict">
                   <p
@@ -63,8 +92,8 @@ export default function TestCases() {
                 </div>
               </div>
             );
-          }
-        )}
+          })}
+        </div>
       </div>
     );
   }

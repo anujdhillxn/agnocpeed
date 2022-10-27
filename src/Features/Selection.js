@@ -1,16 +1,25 @@
-import axios from "axios";
-import { useState, useContext, useEffect } from "react";
+import { Login, Start } from "@mui/icons-material";
+import {
+  Button,
+  FormControl,
+  Input,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  TextField,
+} from "@mui/material";
+import { useState, useEffect, useContext } from "react";
 import { appContext } from "../App";
+import CustomButton from "../Components/CustomButton";
 import Dropdown from "../Components/Dropdown";
-import { CHANGE_BROWSER_READY, CHANGE_CONTEST_READY, CHANGE_PROBLEM, CHANGE_PROBLEM_LIST, PLATFORM_NAMES } from "../utils/constants";
+import { PLATFORM_NAMES } from "../utils/constants";
 
 export default function Selection() {
-
-  const { state, dispatch } = useContext(appContext);
-
+  const { state } = useContext(appContext);
   const [startMessage, setStartMessage] = useState("");
   const [contestBox, setContestBox] = useState("");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(state.config.defaultUsername);
   const [password, setPassword] = useState("");
   const [platformBox, setPlatformBox] = useState(0);
   useEffect(() => {
@@ -19,21 +28,12 @@ export default function Selection() {
     });
   }, []);
 
-  let initiateContest = async () => {
-    try {
-      window.api.start(contestBox);
-    } catch (e) {
-      console.log(e);
-    }
+  const initiateContest = () => {
+    window.api.start(contestBox);
   };
 
-  let login = async () => {
-    try {
-      window.api.login(username, password, PLATFORM_NAMES[platformBox]);
-
-    } catch (e) {
-      console.log(e);
-    }
+  const login = () => {
+    window.api.login(username, password, PLATFORM_NAMES[platformBox]);
   };
 
   return (
@@ -41,52 +41,70 @@ export default function Selection() {
       <div className="selection-wrapper">
         <div className="login">
           <div>
-            <label>Enter Username: </label>
-            <input
-              value={username}
-              name="username"
-              onChange={(e) => {
-                setUsername(e.target.value);
-              }}
-            ></input>
+            <FormControl variant="outlined">
+              <InputLabel htmlFor="username">Username</InputLabel>
+              <OutlinedInput
+                fullWidth
+                id="username"
+                label="Username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                }}
+              />
+            </FormControl>
           </div>
           <div>
-            <label>Enter Password: </label>
-            <input
-              value={password}
-              name="password"
-              type="password"
-              onChange={(e) => {
-                setPassword(e.target.value);
-              }}
-            ></input>
+            <FormControl variant="outlined">
+              <InputLabel htmlFor="password">Password</InputLabel>
+              <OutlinedInput
+                fullWidth
+                value={password}
+                label="Password"
+                type="password"
+                id="password"
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                }}
+              />
+            </FormControl>
           </div>
           <div>
             <Dropdown
-              list={PLATFORM_NAMES}
-              label={"Select Platform"}
-              displayed={platformBox}
-              setDisplayed={setPlatformBox}
+              handleChange={(e) => {
+                setPlatformBox(e.target.value);
+              }}
+              value={platformBox}
+              label={"Platform"}
+              items={PLATFORM_NAMES}
+              fullWidth={true}
             />
           </div>
-          <button onClick={login}>Login</button>
+          <CustomButton title={"Login"} handleClick={login}>
+            <Login />
+          </CustomButton>
         </div>
         <div className="contest">
           <div>
-            <label>Enter Contest ID: </label>
-            <input
-              value={contestBox}
-              name="contestId"
-              onChange={(e) => {
-                setContestBox(e.target.value);
-              }}
-            ></input>
+            <FormControl variant="outlined" margin="normal">
+              <InputLabel htmlFor="contest-id">Contest ID</InputLabel>
+              <OutlinedInput
+                fullWidth
+                value={contestBox}
+                label="Contest ID"
+                id="contest-id"
+                onChange={(e) => {
+                  setContestBox(e.target.value);
+                }}
+              />
+            </FormControl>
           </div>
-          <button onClick={initiateContest}>Start</button>
+          <CustomButton title={"Start Contest"} handleClick={initiateContest}>
+            <Start />
+          </CustomButton>
         </div>
         <div className="status">{startMessage}</div>
       </div>
     </div>
-
   );
 }
