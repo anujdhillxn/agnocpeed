@@ -8,15 +8,16 @@
   font-size: 13px;
   margin: 10px;
 
-  .selection {
-    div {
-      margin-bottom: 5px;
-    }
-  }
+
 
   .selection {
     display: flex;
     justify-content: space-around;
+  }
+
+  .selection-wrapper{
+    display: flex;
+    flex-direction: column;
   }
 
   .button-section {
@@ -49,23 +50,6 @@
           max-height: 100px;
         }
       }
-    }
-  }
-}
-
-.dropdown {
-  margin-top: 10px;
-  margin-bottom: 10px;
-
-  .dropdown-clickable {
-    .dropdown-header {
-      position: relative;
-    }
-
-    .dd-list {
-      position: absolute;
-      overflow-y: scroll;
-      overflow-x: hidden;
     }
   }
 }

@@ -4,43 +4,27 @@ import {
   PlayCircleFilledOutlined,
   ReplayRounded,
   SaveAs,
-  UploadFile,
   UploadFileRounded,
 } from "@mui/icons-material";
-import { Box, Button, ButtonGroup, Container } from "@mui/material";
+import { Container } from "@mui/material";
 import { useContext } from "react";
 import { appContext } from "../App";
 import CustomButton from "../Components/CustomButton";
 import Dropdown from "../Components/Dropdown";
-import {
-  CHANGE_LANGUAGE,
-  CHANGE_PROBLEM,
-  CHANGE_PROBLEM_DETAILS,
-  CHANGE_SERVER_MESSAGE,
-  LANGUAGES,
-} from "../utils/constants";
+
 import { serialize } from "../utils/functions";
 export default function Actions({ model }) {
-  const { state, dispatch } = useContext(appContext);
+  const { state } = useContext(appContext);
 
-  const verifyCode = async () => {
-    try {
-    } catch (e) {
-      dispatch({ type: CHANGE_SERVER_MESSAGE, payload: e });
-    }
-  };
+  const verifyCode = async () => {};
 
   return (
     <div className="actions">
       <Container>
-        {" "}
         <CustomButton
           title={"Reset Code"}
           handleClick={() => {
-            window.api.reset(
-              state.problemList[state.currentProblem],
-              LANGUAGES[state.language]
-            );
+            window.api.reset();
           }}
         >
           <ReplayRounded />
@@ -48,10 +32,7 @@ export default function Actions({ model }) {
         <CustomButton
           title={"Compile"}
           handleClick={() => {
-            window.api.compile(
-              state.problemList[state.currentProblem],
-              LANGUAGES[state.language]
-            );
+            window.api.compile();
           }}
         >
           <Build />
@@ -59,10 +40,7 @@ export default function Actions({ model }) {
         <CustomButton
           title={"Run"}
           handleClick={() => {
-            window.api.run(
-              state.problemList[state.currentProblem],
-              LANGUAGES[state.language]
-            );
+            window.api.run();
           }}
         >
           <PlayCircleFilledOutlined />
@@ -70,33 +48,16 @@ export default function Actions({ model }) {
         <CustomButton
           title={"Submit"}
           handleClick={() => {
-            window.api.submit(
-              state.problemList[state.currentProblem],
-              LANGUAGES[state.language]
-            );
+            window.api.submit();
           }}
         >
           <UploadFileRounded />
-        </CustomButton>
-        <CustomButton title={"Verify"} handleClick={verifyCode}>
-          <DoneAll />
-        </CustomButton>
-        <CustomButton
-          title={"Save Layout"}
-          handleClick={() => {
-            let modelJson = model.toJson();
-            serialize(modelJson);
-            console.log(modelJson);
-            window.api.saveLayout(modelJson);
-          }}
-        >
-          <SaveAs />
         </CustomButton>
       </Container>
       <Container>
         <Dropdown
           handleChange={(e) => {
-            window.api.change(e.target.value, LANGUAGES[state.language]);
+            window.api.change(e.target.value, state.currentLanguage);
           }}
           value={state.currentProblem}
           label={"Currently solving"}
@@ -105,11 +66,11 @@ export default function Actions({ model }) {
         />
         <Dropdown
           handleChange={(e) => {
-            window.api.change(state.currentProblem, LANGUAGES[e.target.value]);
+            window.api.change(state.currentProblem, e.target.value);
           }}
-          value={state.language}
+          value={state.currentLanguage}
           label={"Language"}
-          items={LANGUAGES}
+          items={Object.keys(state.config.languages)}
           fullwidth={true}
         />
       </Container>

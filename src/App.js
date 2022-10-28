@@ -1,26 +1,11 @@
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ReactNotifications } from "react-notifications-component";
 import * as FlexLayout from "flexlayout-react";
 import "flexlayout-react/style/light.css";
 import "react-notifications-component/dist/theme.css";
 import "./App.scss";
 import TestCases from "./Features/TestCases";
-import { reducer } from "./utils/functions";
-import {
-  CHANGE_PROBLEM_DETAILS,
-  CHANGE_SERVER_MESSAGE,
-  LANGUAGES,
-  APP_LAYOUT,
-  INITIAL_STATE,
-  CHANGE_STATE,
-  CHANGE_PROBLEM,
-  CHANGE_PROBLEM_LIST,
-  CHANGE_CONTEST_ID,
-  CHANGE_WEBSITE,
-  CHANGE_SUBMISSIONS,
-  CHANGE_STANDINGS,
-  CHANGE_CONFIG,
-} from "./utils/constants";
+import { INITIAL_STATE, THEME } from "./utils/constants";
 import { Store } from "react-notifications-component";
 import notification from "./Components/notif";
 import Selection from "./Features/Selection";
@@ -29,57 +14,26 @@ import Actions from "./Features/Actions";
 import Log from "./Features/Log";
 import Statement from "./Features/Statement";
 import Standings from "./Features/Standings";
-import { createTheme, ThemeProvider } from "@mui/material";
+import {
+  Box,
+  createTheme,
+  experimental_sx,
+  ThemeProvider,
+} from "@mui/material";
+import { serialize } from "./utils/functions";
 
 export const appContext = React.createContext(null);
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
-  const [model, setModel] = useState(FlexLayout.Model.fromJson(APP_LAYOUT));
+  const [state, setState] = useState(INITIAL_STATE);
+  const [model, setModel] = useState(null);
+
   useEffect(() => {
-    window.api.getConfig((data) => {
-      dispatch({ type: CHANGE_CONFIG, payload: data });
-      if (data.layout);
-      setModel(FlexLayout.Model.fromJson(data.layout));
+    window.api.getState((data) => {
+      setState(data);
+      if (data.config.layout)
+        setModel(FlexLayout.Model.fromJson(data.config.layout));
     });
-
-    window.api.getCurrentProblem((data) => {
-      dispatch({ type: CHANGE_PROBLEM, payload: data });
-    });
-
-    window.api.getProblemList((data) => {
-      dispatch({ type: CHANGE_PROBLEM_LIST, payload: data });
-    });
-
-    window.api.getProblemDetails((data) => {
-      dispatch({ type: CHANGE_PROBLEM_DETAILS, payload: data });
-    });
-
-    window.api.getCurrentProblem((data) => {
-      dispatch({ type: CHANGE_PROBLEM, payload: data });
-    });
-
-    window.api.getLog((data) => {
-      dispatch({ type: CHANGE_SERVER_MESSAGE, payload: data });
-    });
-
-    window.api.getContestId((data) => {
-      dispatch({ type: CHANGE_CONTEST_ID, payload: data });
-      window.api.change(0, LANGUAGES[0]);
-    });
-
-    window.api.getWebsite((data) => {
-      dispatch({ type: CHANGE_WEBSITE, payload: data });
-    });
-
-    window.api.getSubmissions((data) => {
-      dispatch({ type: CHANGE_SUBMISSIONS, payload: data });
-    });
-
-    window.api.getStandings((data) => {
-      dispatch({ type: CHANGE_STANDINGS, payload: data });
-    });
-
     window.api.notif((data) => {
       Store.addNotification({
         ...notification,
@@ -89,6 +43,7 @@ export default function App() {
       });
     });
   }, []);
+
   const factory = (node) => {
     const name = node.getName();
     if (name === "Standings") return <Standings />;
@@ -99,19 +54,14 @@ export default function App() {
     else return <TestCases />;
   };
 
-  const THEME = createTheme({
-    typography: {
-      fontFamily: `'Montserrat', sans-serif`,
-    },
-  });
   useEffect(() => {
     console.log(state);
   }, [state]);
   return (
-    <appContext.Provider value={{ state: state, dispatch: dispatch }}>
+    <appContext.Provider value={{ state: state }}>
       <ThemeProvider theme={THEME}>
-        {state.config.defaultUsername === undefined ? (
-          <div>Loading config...</div>
+        {state.config === null ? (
+          <Box>Loading config...</Box>
         ) : (
           <div className="App">
             <ReactNotifications />
@@ -119,12 +69,18 @@ export default function App() {
             state.website == null ||
             !state.problemList ||
             state.currentProblem === null ? (
-              <div>
-                {state.config.username}
-                <Selection />
-              </div>
+              <Selection />
             ) : (
-              <FlexLayout.Layout model={model} factory={factory} />
+              <FlexLayout.Layout
+                onModelChange={() => {
+                  let modelJson = model.toJson();
+                  serialize(modelJson);
+                  window.api.saveLayout(modelJson);
+                }}
+                font={{ family: "'Montserrat', sans-serif" }}
+                model={model}
+                factory={factory}
+              />
             )}
           </div>
         )}

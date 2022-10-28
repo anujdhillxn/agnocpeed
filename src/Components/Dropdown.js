@@ -11,7 +11,9 @@ export default function Dropdown(props) {
         onChange={props.handleChange}
       >
         {props.items.map((item, idx) => (
-          <MenuItem value={idx}>{item}</MenuItem>
+          <MenuItem value={idx} key={item}>
+            {item}
+          </MenuItem>
         ))}
       </Select>
     </FormControl>

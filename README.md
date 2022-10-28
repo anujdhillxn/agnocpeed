@@ -1,4 +1,5 @@
-TODO
-//Manage state with single object.
-//fix tables
+TODO\
+//Add shortcuts
+//Add sounds
 //Add future contests
+//remove console logs

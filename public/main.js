@@ -1,206 +1,54 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { exec, execSync } = require("child_process");
 const isDev = require("electron-is-dev");
 const puppeteer = require("puppeteer");
-
-const ATCODER = "atcoder";
-const CODEFORCES = "codeforces";
-const PRACTICE = "practice";
-const CODECHEF = "codechef";
+const {
+  getChromiumExecPath,
+  runCommandSync,
+  runCommand,
+  areEqual,
+} = require("./utils/functions");
+const {
+  CODEFORCES,
+  ATCODER,
+  PRACTICE,
+  CODECHEF,
+  INITIAL_STATE,
+} = require("./utils/constants");
 
 require("@electron/remote/main").initialize();
 
-let browser = null;
-let mainPage = null;
-let submissionPage = null;
-let standingsPage = null;
-let website = null;
-let contestId = null;
+let state = INITIAL_STATE;
+let browser = null,
+  mainPage = null,
+  submissionPage = null,
+  standingsPage = null;
+
 let contestDir = null;
-let problemList = [];
-let problemDetails = {};
-let currentProblem = null;
-let submissions = [];
-let standings = null;
-let log = "";
 let filesDir = isDev
   ? path.join(__dirname, "../extraResources/files")
   : path.join(process.resourcesPath, "extraResources/files");
-let boilerplate = isDev
+let settingsDir = isDev
   ? path.join(__dirname, "../extraResources/settings")
   : path.join(process.resourcesPath, "extraResources/settings");
-let configPath = path.join(boilerplate, "config.json");
-let config = null;
+let configPath = path.join(settingsDir, "config.json");
 
 let win;
 
-function setWebsite(newVal) {
-  if (newVal == website) return;
-  website = newVal;
-  win.webContents.send("getWebsite", website);
-}
-
-function setContestId(newVal) {
-  if (newVal == contestId) return;
-  contestId = newVal;
-  win.webContents.send("getContestId", contestId);
-}
-
-function setCurrentProblem(newVal) {
-  if (newVal == currentProblem) return;
-  currentProblem = newVal;
-  win.webContents.send("getCurrentProblem", currentProblem);
-}
-
-function setProblemDetails(newVal) {
-  if (newVal == problemDetails) return;
-  problemDetails = newVal;
-  win.webContents.send("getProblemDetails", problemDetails);
-}
-
-function setProblemList(newVal) {
-  if (newVal == problemList) return;
-  problemList = newVal;
-  win.webContents.send("getProblemList", problemList);
-}
-
-function setSubmissions(newVal) {
-  if (newVal == submissions) return;
-  submissions = newVal;
-  win.webContents.send("getSubmissions", submissions);
-}
-
-function setStandings(newVal) {
-  if (newVal == standings) return;
-  standings = newVal;
-  win.webContents.send("getStandings", standings);
-}
-
-function setLog(newVal) {
-  if (newVal == log) return;
-  log = newVal;
-  win.webContents.send("getLog", log);
-}
-
-function setConfig(newVal) {
-  if (newVal === config) return;
-  config = newVal;
-  win.webContents.send("getConfig", config);
-  const jsonConfig = JSON.stringify(config);
-  fs.writeFile(configPath, jsonConfig, function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });
-}
-
-async function updateSubmissions() {
-  if (website && contestId) {
-    const newSubmissions = [];
-    switch (website) {
-      case CODEFORCES:
-        await submissionPage.goto(
-          `https://codeforces.com/contest/${contestId}/my`
-        );
-        const submissionTables = await submissionPage.$$(
-          ".status-frame-datatable"
-        );
-        for (const table of submissionTables) {
-          const rows = await table.$$("tr");
-          for (let i = 1; i < rows.length; i++) {
-            const cells = await rows[i].$$("td");
-            const data = [];
-            for (const cell of cells) {
-              const val = await cell.evaluate((val) => val.innerText);
-              data.push(val);
-            }
-            newSubmissions.push({
-              problemId: data[3],
-              time: data[1],
-              verdict: data[5],
-            });
-          }
-        }
-        break;
-      case ATCODER:
-        await submissionPage.goto(
-          `https://atcoder.jp/contests/${contestId}/submissions/me`
-        );
-        const table = await submissionPage.$("tbody");
-        const rows = await table.$$("tr");
-        for (let i = 0; i < rows.length; i++) {
-          const cells = await rows[i].$$("td");
-          const data = [];
-          for (const cell of cells) {
-            const val = await cell.evaluate((val) => val.innerText);
-            data.push(val);
-          }
-          newSubmissions.push({
-            problemId: data[1],
-            time: data[0],
-            verdict: data[6],
-          });
-        }
-    }
-    setSubmissions(newSubmissions);
+function setState(key, newVal) {
+  console.log("Trying to change", key, "from", state[key], "to", newVal);
+  if (state[key] === newVal) return;
+  state[key] = newVal;
+  win.webContents.send("getState", state);
+  if (key === "config") {
+    const jsonConfig = JSON.stringify(state.config);
+    fs.writeFile(configPath, jsonConfig, function (err) {
+      if (err) {
+        console.log(err);
+      }
+    });
   }
-}
-
-async function updateStandings() {
-  if (website && contestId && problemList) {
-    let newStandings = {};
-    newStandings.solve = {};
-    switch (website) {
-      case CODEFORCES:
-        await standingsPage.goto(
-          `https://codeforces.com/contest/${contestId}/standings/friends/true`
-        );
-        await standingsPage.waitForSelector(`.standingsStatisticsRow`);
-        const solveRow = await standingsPage.$(".standingsStatisticsRow");
-        const counts = await solveRow.$$("td");
-        for (let i = 0; i < problemList.length; i++) {
-          newStandings.solve[problemList[i]] = await counts[i + 4].evaluate(
-            (val) => val.innerText
-          );
-        }
-        try {
-          const myRow = await standingsPage.$(".highlighted-row");
-          const myRank = await myRow.$$("td");
-          newStandings.rank = await myRank[0].evaluate((val) => val.innerText);
-        } catch (e) {
-          newStandings.rank = "Cannot find you";
-        }
-        break;
-      case ATCODER:
-        await standingsPage.goto(
-          `https://atcoder.jp/contests/${contestId}/standings`
-        );
-        await standingsPage.waitForSelector("#standings-tbody");
-        const table = await standingsPage.$("#standings-tbody");
-        const solves = await table.$(".standings-statistics");
-        const cells = await solves.$$("td");
-        for (let i = 1; i < cells.length; i++) {
-          newStandings.solve[problemList[i - 1]] = await cells[i].evaluate(
-            (val) => val.innerText
-          );
-        }
-        try {
-          const me = await table.$(".info");
-          const rank = await me.$$("td");
-          newStandings.rank = await rank[0].evaluate((val) => val.innerText);
-        } catch (e) {
-          newStandings.rank = "Cannot find you";
-        }
-        break;
-    }
-    setStandings(newStandings);
-  }
-}
-
-function getChromiumExecPath() {
-  return puppeteer.executablePath().replace("app.asar", "app.asar.unpacked");
 }
 
 async function init() {
@@ -218,7 +66,7 @@ async function init() {
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "./index.html")}`
   );
-  if (!fs.existsSync(filesDir)) exec(`mkdir ${filesDir}`);
+  if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
   browser = await puppeteer.launch({
     executablePath: getChromiumExecPath(),
     headless: true,
@@ -228,7 +76,7 @@ async function init() {
   standingsPage = await browser.newPage();
   fs.readFile(configPath, "utf8", function (err, data) {
     if (err) throw err;
-    setConfig(JSON.parse(data));
+    setState("config", JSON.parse(data));
   });
   setInterval(() => {
     updateSubmissions();
@@ -237,90 +85,41 @@ async function init() {
     updateStandings();
   }, 5000);
 }
-
-function sendNotif(type, message) {
+const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
-}
+};
 
-function areEqual(s1, s2) {
-  s1 = s1.replace(/\s+/g, " ").trim();
-  s2 = s2.replace(/\s+/g, " ").trim();
-  console.log("x" + s1 + "x");
-  console.log("x" + s2 + "x");
-  return s1 === s2 ? "AC" : "WA";
-}
-
-function addToLog(message) {
-  setLog(message + "\n" + log);
-}
-
-function runCommand(
-  command,
-  input = "",
-  timeout = 0,
-  err = (data) => {},
-  out = (data) => {},
-  close = (code, signal) => {}
-) {
-  const res = exec(command, {
-    encoding: "utf8",
-    timeout: timeout,
-    killSignal: "SIGINT",
-  });
-  res.stdin.write(input);
-  res.stdin.end();
-  res.stderr.on("data", (data) => {
-    err(data);
-  });
-  res.stdout.on("data", (data) => {
-    out(data);
-  });
-  res.on("close", (code, signal) => {
-    close(code, signal);
-  });
-  //TODO: Handle run Command properly.
-}
-
-function runCommandSync(command) {
-  const resp = execSync(command);
-}
-
-function clearTestCases(problemId) {
-  let newDetails = { ...problemDetails };
-  for (let i = 0; i < problemDetails[problemId].testCases.length; i++) {
+const clearTestCases = (problemId) => {
+  let newDetails = { ...state.problemDetails };
+  for (let i = 0; i < newDetails[problemId].testCases.length; i++) {
     newDetails[problemId].testCases[i].result = "";
     newDetails[problemId].testCases[i].verdict = "";
   }
-  setProblemDetails(newDetails);
+  setState("problemDetails", newDetails);
+};
+
+function addToLog(message) {
+  setState("log", message + "\n" + state.log);
 }
 
-function createWindow() {
+const createWindow = () => {
   init();
-}
+};
 
-app.on("ready", createWindow);
-
-// Quit when all windows are closed.
-app.on("window-all-closed", function () {
+const closeWindow = () => {
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== "darwin") {
     app.quit();
   }
-});
+};
 
-app.on("activate", function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
-
-ipcMain.on("login", async (event, username, password, platform) => {
+const login = async (event, username, password, platform) => {
   switch (platform) {
     case CODEFORCES:
       win.webContents.send("getLoginMessage", "Opening Website...");
       try {
-        (await mainPage).goto("https://codeforces.com/enter?back=%2F");
+        await mainPage.goto("https://codeforces.com/enter?back=%2F");
         await mainPage.waitForSelector("#handleOrEmail");
       } catch (e) {
         win.webContents.send("getLoginMessage", "Unable to open website. " + e);
@@ -381,39 +180,41 @@ ipcMain.on("login", async (event, username, password, platform) => {
       win.webContents.send("getLoginMessage", "Invalid platform.");
       return;
   }
-  setWebsite(platform);
-});
+  setState("website", platform);
+};
 
-ipcMain.on("start", async (event, id) => {
+const start = async (event, id) => {
   fs.readFile(configPath, "utf8", function (err, data) {
     if (err) throw err;
-    setConfig(JSON.parse(data));
+    setState("config", JSON.parse(data));
   });
-  if (website == null) {
+  if (state.website == null) {
     win.webContents.send("getLoginMessage", "Select a platform first!");
     return;
   } else {
-    contestDir = path.join(filesDir, `${website}_${id}`);
+    contestDir = path.join(filesDir, `${state.website}_${id}`);
     let testcases = path.join(contestDir, "testcases.json");
     if (!fs.existsSync(contestDir)) {
       runCommandSync(`mkdir ${contestDir}`);
       runCommandSync(`echo "{}" > ${testcases}`);
     }
-    fs.readFile(testcases, "utf8", function (err, data) {
-      if (err) throw err;
-      problemDetails = JSON.parse(data);
-    });
-    setProblemList([]);
+    // fs.readFile(testcases, "utf8", function (err, data) {
+    //   if (err) throw err;
+    //   problemDetails = JSON.parse(data);
+    // });
+    setState("problemList", []);
+    let newProblemList = [];
+    let newProblemDetails = {};
     win.webContents.send("getLoginMessage", "Collecting tasks...");
     try {
-      switch (website) {
+      switch (state.website) {
         case CODEFORCES:
           await mainPage.goto(`https://codeforces.com/contest/${id}`);
           var items = await mainPage.$$(".id");
           for (let i = 0; i < items.length; i++) {
             let linkText = await items[i].$("a");
             let problemId = await linkText.evaluate((el) => el.innerText);
-            setProblemList([...problemList, problemId]);
+            newProblemList.push(problemId);
           }
           break;
         case ATCODER:
@@ -423,25 +224,22 @@ ipcMain.on("start", async (event, id) => {
             return uiElement.children;
           });
           for (let i = 0; i < Object.keys(nodeChildren).length; i++)
-            setProblemList([...problemList, String.fromCharCode(i + 65)]);
+            newProblemList.push(String.fromCharCode(i + 65));
           break;
         case PRACTICE:
-          setProblemList(["A", "B", "C", "D"]);
-          for (const p in problemList) {
-            setProblemDetails({
-              ...problemDetails,
-              [p]: {
-                testcases: [
-                  {
-                    input: "",
-                    output: "",
-                    result: "",
-                    verdict: "",
-                    comments: "",
-                  },
-                ],
-              },
-            });
+          newProblemList = ["A", "B", "C", "D"];
+          for (const p in state.problemList) {
+            newProblemDetails[p] = {
+              testcases: [
+                {
+                  input: "",
+                  output: "",
+                  result: "",
+                  verdict: "",
+                  comments: "",
+                },
+              ],
+            };
           }
           break;
         default:
@@ -452,16 +250,21 @@ ipcMain.on("start", async (event, id) => {
       win.webContents.send("getLoginMessage", "Error. Try again. " + e);
       return;
     }
-  }
-  setContestId(id);
-});
 
-ipcMain.on("change", async (event, problemId, lang) => {
-  const problemName = problemList[problemId];
+    setState("problemList", newProblemList);
+    setState("problemDetails", newProblemDetails);
+  }
+  setState("contestId", id);
+  change(undefined, 0, 0);
+};
+
+const change = async (event, problemId, langId) => {
+  const problemName = state.problemList[problemId];
+  const lang = Object.keys(state.config.languages)[langId];
   let fileLoc = path.join(contestDir, `${problemName}.${lang}`);
   if (!fs.existsSync(fileLoc)) {
     fs.readFile(
-      `${path.join(boilerplate, config.languages[lang].template)}`,
+      `${path.join(settingsDir, state.config.languages[lang].template)}`,
       { encoding: "utf-8" },
       function (err, data) {
         if (!err) {
@@ -478,23 +281,23 @@ ipcMain.on("change", async (event, problemId, lang) => {
   }
 
   const statementLoc = path.join(contestDir, `${problemName}.pdf`);
-  runCommand(`${config.editor} -g --goto ${fileLoc}:44:4`);
+  runCommand(`${state.config.editor} -g --goto ${fileLoc}:44:4`);
   if (
-    !problemDetails.hasOwnProperty(problemName) ||
-    problemDetails[problemName]["testCases"].length === 0
+    !state.problemDetails.hasOwnProperty(problemName) ||
+    state.problemDetails[problemName]["testCases"].length === 0
   ) {
     let testCases = [];
     try {
-      switch (website) {
+      switch (state.website) {
         case CODEFORCES:
           if (!fs.existsSync(statementLoc)) {
             await mainPage.goto(
-              `https://codeforces.com/contest/${contestId}/problem/${problemName}`
+              `https://codeforces.com/contest/${state.contestId}/problem/${problemName}`
             );
             await mainPage.pdf({ path: statementLoc });
           }
           await mainPage.goto(
-            `https://codeforces.com/contest/${contestId}/problem/${problemName}`
+            `https://codeforces.com/contest/${state.contestId}/problem/${problemName}`
           );
 
           inputTexts = await mainPage.$$(".input");
@@ -518,12 +321,12 @@ ipcMain.on("change", async (event, problemId, lang) => {
         case ATCODER:
           if (!fs.existsSync(statementLoc)) {
             await mainPage.goto(
-              `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`
+              `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemName}`
             );
             await mainPage.pdf({ path: statementLoc });
           }
           await mainPage.goto(
-            `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`
+            `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemName}`
           );
           let count = 0,
             started = false,
@@ -535,7 +338,6 @@ ipcMain.on("change", async (event, problemId, lang) => {
                 `#pre-sample${count}`,
                 (el) => el.textContent
               );
-              console.log(count, data);
               if (toInput) {
                 testCases.push({
                   input: "",
@@ -553,7 +355,6 @@ ipcMain.on("change", async (event, problemId, lang) => {
               }
               started = true;
             } catch (e) {
-              console.log(e);
               if (started) break;
             }
             count++;
@@ -568,22 +369,25 @@ ipcMain.on("change", async (event, problemId, lang) => {
       addToLog("Error fetching test cases. Try again. " + e);
       return;
     }
-    setProblemDetails({
-      ...problemDetails,
-      [problemName]: { ...problemDetails[problemName], testCases: testCases },
+    setState("problemDetails", {
+      ...state.problemDetails,
+      [problemName]: {
+        ...state.problemDetails[problemName],
+        testCases: testCases,
+        statement: statementLoc,
+      },
     });
   }
-  setProblemDetails({
-    ...problemDetails,
-    [problemName]: { ...problemDetails[problemName], statement: statementLoc },
-  });
-  setCurrentProblem(problemId);
-  addToLog(`Solving problem ${problemName}`);
-});
+  setState("currentProblem", problemId);
+  setState("currentLanguage", langId);
+  addToLog(`Solving problem ${problemName} in ${lang}`);
+};
 
-ipcMain.on("compile", async (event, problemId, lang) => {
+const compile = async (event) => {
+  const problemId = state.problemList[state.currentProblem];
+  const lang = Object.keys(state.config.languages)[state.currentLanguage];
   let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
-  if (!config.languages[lang].compiled) {
+  if (!state.config.languages[lang].compiled) {
     addToLog("No need to compile.");
     sendNotif(0, "No need to compile.");
   } else {
@@ -591,7 +395,7 @@ ipcMain.on("compile", async (event, problemId, lang) => {
     if (lang === "cpp")
       command =
         "g++" +
-        config.languages[lang].compileOptions +
+        state.config.languages[lang].compileOptions +
         ` ${fileLoc} -o ${fileLoc}.exe`;
     runCommand(
       command,
@@ -607,9 +411,11 @@ ipcMain.on("compile", async (event, problemId, lang) => {
       }
     );
   }
-});
+};
 
-ipcMain.on("run", async (event, problemId, lang) => {
+const run = async (event) => {
+  const problemId = state.problemList[state.currentProblem];
+  const lang = Object.keys(state.config.languages)[state.currentLanguage];
   let fileLoc;
   if (lang === "cpp") {
     fileLoc = path.join(contestDir, `${problemId}.${lang}.exe`);
@@ -620,27 +426,26 @@ ipcMain.on("run", async (event, problemId, lang) => {
     addToLog("Executable not found.");
     return 0;
   } else {
-    let command = config.languages[lang].runOptions + `${fileLoc}`;
-    console.log(command);
+    let command = state.config.languages[lang].runOptions + `${fileLoc}`;
     clearTestCases(problemId);
-    for (let i = 0; i < problemDetails[problemId].testCases.length; i++) {
-      const testCase = problemDetails[problemId].testCases[i].input;
+    for (let i = 0; i < state.problemDetails[problemId].testCases.length; i++) {
+      const testCase = state.problemDetails[problemId].testCases[i].input;
       runCommand(
         command,
         testCase,
         5000,
         (err) => {
-          let newDetails = { ...problemDetails };
+          let newDetails = { ...state.problemDetails };
           newDetails[problemId].testCases[i].comments += err;
-          setProblemDetails(newDetails);
+          setState("problemDetails", newDetails);
         },
         (out) => {
-          let newDetails = { ...problemDetails };
+          let newDetails = { ...state.problemDetails };
           newDetails[problemId].testCases[i].result += out;
-          setProblemDetails(newDetails);
+          setState("problemDetails", newDetails);
         },
         (code, signal) => {
-          let newDetails = { ...problemDetails };
+          let newDetails = { ...state.problemDetails };
           if (signal !== null) {
             newDetails[problemId].testCases[i].verdict = "TLE";
           } else {
@@ -649,31 +454,48 @@ ipcMain.on("run", async (event, problemId, lang) => {
               newDetails[problemId].testCases[i].result
             );
           }
-          setProblemDetails(newDetails);
+          setState("problemDetails", newDetails);
         }
       );
     }
   }
-});
+};
 
-ipcMain.on("reset", async (event, problemId, lang) => {
+const reset = async (event) => {
+  const problemId = state.problemList[state.currentProblem];
+  const lang = Object.keys(state.config.languages)[state.currentLanguage];
   let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
-  runCommand(
-    `cp ${path.join(boilerplate, config.languages[lang].template)} ${fileLoc}`
+  fs.readFile(
+    `${path.join(settingsDir, state.config.languages[lang].template)}`,
+    { encoding: "utf-8" },
+    function (err, data) {
+      if (!err) {
+        fs.writeFile(`${fileLoc}`, data, function (err) {
+          if (err) {
+            return console.log(err);
+          }
+        });
+      } else {
+        console.log(err);
+      }
+    }
   );
   sendNotif(0, "File cleared.");
-});
+  //Wont work in windows
+};
 
-ipcMain.on("submit", async (event, problemId, lang) => {
+const submit = async (event) => {
+  const problemId = state.problemList[state.currentProblem];
+  const lang = Object.keys(state.config.languages)[state.currentLanguage];
   let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
-  switch (website) {
+  switch (state.website) {
     case CODEFORCES:
       await mainPage.goto(
-        `https://codeforces.com/contest/${contestId}/submit/${problemId}`
+        `https://codeforces.com/contest/${state.contestId}/submit/${problemId}`
       );
       await mainPage.select(
         'select[name="programTypeId"]',
-        config.languages[lang].idCodeforces
+        state.config.languages[lang].idCodeforces
       );
       var uploadButton = await mainPage.$("input[type=file]");
       await uploadButton.uploadFile(fileLoc);
@@ -682,11 +504,11 @@ ipcMain.on("submit", async (event, problemId, lang) => {
       break;
     case ATCODER:
       await mainPage.goto(
-        `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemId}`
+        `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemId}`
       );
       await mainPage.select(
         'select[name="data.LanguageId"',
-        config.languages[lang].idAtcoder
+        state.config.languages[lang].idAtcoder
       );
       const [fileChooser] = await Promise.all([
         mainPage.waitForFileChooser(),
@@ -700,33 +522,171 @@ ipcMain.on("submit", async (event, problemId, lang) => {
       addToLog("Invalid platform.");
       sendNotif(1, "Unable to submit. Try again.");
   }
-});
+};
 
-ipcMain.on("saveLayout", async (event, newLayout) => {
-  let newConfig = { ...config };
+const saveLayout = async (event, newLayout) => {
+  let newConfig = { ...state.config };
   newConfig.layout = newLayout;
-  setConfig(newConfig);
-  sendNotif(0, "Layout saved.");
-});
+  setState("config", newConfig);
+};
 
-ipcMain.on("clearLog", async (event) => {
-  setLog("");
-});
+const clearLog = async (event) => {
+  setState("log", "");
+};
 
-ipcMain.on("changeTestCases", async (event, problemId, idx, box, text) => {
-  let newDetails = { ...problemDetails };
-  newDetails[problemId].testCases[idx][box] = text;
-  setProblemDetails(newDetails);
-});
+const changeTestCases = async (event, idx, box, text) => {
+  let newDetails = { ...state.problemDetails };
+  newDetails[state.problemList[state.currentProblem]].testCases[idx][box] =
+    text;
+  setState("problemDetails", newDetails);
+};
 
-ipcMain.on("addNewTestCase", async (event, problemId) => {
-  let newDetails = { ...problemDetails };
-  newDetails[problemId].testCases.push({
+const addNewTestCase = async (event) => {
+  let newDetails = { ...state.problemDetails };
+  newDetails[state.problemList[state.currentProblem]].testCases.push({
     input: "",
     output: "",
     result: "",
     verdict: "",
     comments: "",
   });
-  setProblemDetails(newDetails);
+  setState("problemDetails", newDetails);
+};
+
+const deleteTestCase = async (event, idx) => {
+  let newDetails = { ...state.problemDetails };
+  newDetails[state.problemList[state.currentProblem]].testCases = [
+    ...newDetails[state.problemList[state.currentProblem]].testCases.slice(
+      0,
+      idx
+    ),
+    ...newDetails[state.problemList[state.currentProblem]].testCases.slice(
+      idx + 1
+    ),
+  ];
+  setState("problemDetais", newDetails);
+};
+
+const updateSubmissions = async () => {
+  if (state.website && state.contestId && state.currentProblem !== null) {
+    const newSubmissions = [];
+    switch (state.website) {
+      case CODEFORCES:
+        await submissionPage.goto(
+          `https://codeforces.com/contest/${state.contestId}/my`
+        );
+        const submissionTables = await submissionPage.$$(
+          ".status-frame-datatable"
+        );
+        for (const table of submissionTables) {
+          const rows = await table.$$("tr");
+          for (let i = 1; i < rows.length; i++) {
+            const cells = await rows[i].$$("td");
+            const data = [];
+            for (const cell of cells) {
+              const val = await cell.evaluate((val) => val.innerText);
+              data.push(val);
+            }
+            newSubmissions.push({
+              problemId: data[3],
+              time: data[1],
+              verdict: data[5],
+            });
+          }
+        }
+        break;
+      case ATCODER:
+        await submissionPage.goto(
+          `https://atcoder.jp/contests/${state.contestId}/submissions/me`
+        );
+        const table = await submissionPage.$("tbody");
+        const rows = await table.$$("tr");
+        for (let i = 0; i < rows.length; i++) {
+          const cells = await rows[i].$$("td");
+          const data = [];
+          for (const cell of cells) {
+            const val = await cell.evaluate((val) => val.innerText);
+            data.push(val);
+          }
+          newSubmissions.push({
+            problemId: data[1],
+            time: data[0],
+            verdict: data[6],
+          });
+        }
+    }
+    setState("submissions", newSubmissions);
+  }
+};
+
+const updateStandings = async () => {
+  if (state.website && state.contestId && state.problemList) {
+    let newStandings = {};
+    newStandings.solve = {};
+    switch (state.website) {
+      case CODEFORCES:
+        await standingsPage.goto(
+          `https://codeforces.com/contest/${state.contestId}/standings/friends/true`
+        );
+        await standingsPage.waitForSelector(`.standingsStatisticsRow`);
+        const solveRow = await standingsPage.$(".standingsStatisticsRow");
+        const counts = await solveRow.$$("td");
+        for (let i = 0; i < state.problemList.length; i++) {
+          newStandings.solve[state.problemList[i]] = await counts[
+            i + 4
+          ].evaluate((val) => val.innerText);
+        }
+        try {
+          const myRow = await standingsPage.$(".highlighted-row");
+          const myRank = await myRow.$$("td");
+          newStandings.rank = await myRank[0].evaluate((val) => val.innerText);
+        } catch (e) {
+          newStandings.rank = "Cannot find you";
+        }
+        break;
+      case ATCODER:
+        await standingsPage.goto(
+          `https://atcoder.jp/contests/${state.contestId}/standings`
+        );
+        await standingsPage.waitForSelector("#standings-tbody");
+        const table = await standingsPage.$("#standings-tbody");
+        const solves = await table.$(".standings-statistics");
+        const cells = await solves.$$("td");
+        for (let i = 1; i < cells.length; i++) {
+          newStandings.solve[state.problemList[i - 1]] = await cells[
+            i
+          ].evaluate((val) => val.innerText);
+        }
+        try {
+          const me = await table.$(".info");
+          const rank = await me.$$("td");
+          newStandings.rank = await rank[0].evaluate((val) => val.innerText);
+        } catch (e) {
+          newStandings.rank = "Cannot find you";
+        }
+        break;
+    }
+    setState("standings", newStandings);
+  }
+};
+
+app.on("ready", createWindow);
+app.on("window-all-closed", closeWindow);
+app.on("activate", function () {
+  // On OS X it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+ipcMain.on("login", login);
+ipcMain.on("start", start);
+ipcMain.on("change", change);
+ipcMain.on("compile", compile);
+ipcMain.on("run", run);
+ipcMain.on("reset", reset);
+ipcMain.on("submit", submit);
+ipcMain.on("saveLayout", saveLayout);
+ipcMain.on("clearLog", clearLog);
+ipcMain.on("changeTestCases", changeTestCases);
+ipcMain.on("addNewTestCase", addNewTestCase);
+ipcMain.on("deleteTestCase", deleteTestCase);

@@ -1,82 +1,33 @@
-import Actions from "../Features/Actions";
-import Log from "../Features/Log";
-import Submissions from "../Features/Submissions";
-import TestCases from "../Features/TestCases";
+import { createTheme, makeStyles } from "@mui/material";
 
-export const CHANGE_PROBLEM = "CHANGE_PROBLEM";
-export const CHANGE_SUBMISSIONS = "CHANGE_SUBMISSIONS";
-export const CHANGE_PROBLEM_LIST = "CHANGE_PROBLEM_LIST";
-export const CHANGE_PROBLEM_DETAILS = "CHANGE_PROBLEM_DETAILS";
-export const CHANGE_LANGUAGE = "CHANGE_LANGUAGE";
-export const CHANGE_SERVER_MESSAGE = "CHANGE_SERVER_MESSAGE";
-export const CHANGE_WEBSITE = "CHANGE_BROWSER_READY";
-export const CHANGE_CONTEST_ID = "CHANGE_CONTEST_READY";
-export const CHANGE_STATE = "CHANGE_STATE";
-export const CHANGE_STANDINGS = "CHANGE_STANDINGS";
-export const CHANGE_CONFIG = "CHANGE_CONFIG";
 export const PLATFORM_NAMES = ["codeforces", "atcoder", "codechef", "practice"];
-export const LANGUAGES = ["cpp", "py"];
 export const ACCEPTED_VERDICTS = ["AC", "Accepted"];
 export const REJECTED_VERDICTS = [
   "TLE",
+  "MLE",
   "WA",
   "RE",
   "Time limit exceeded",
+  "Memory limit exceeded",
   "Wrong answer",
   "Runtime error",
 ];
 
 export const INITIAL_STATE = {
-  submissions: [],
-  problemList: [],
-  config: {},
-  problemDetails: null, //JSON
-  currentProblem: null, //number
-  log: "",
-  language: 0,
-  contestId: null,
   website: null,
+  contestId: null,
+  problemList: [],
+  problemDetails: {},
+  currentProblem: null,
+  currentLanguage: null,
+  submissions: [],
   standings: null,
+  log: "",
+  config: null,
 };
 
-export const APP_LAYOUT = {
-  global: { tabEnableClose: false },
-  borders: [
-    {
-      type: "border",
-      location: "bottom",
-      size: 100,
-      children: [
-        {
-          type: "tab",
-          name: "Actions",
-        },
-        {
-          type: "tab",
-          name: "Log",
-        },
-        {
-          type: "tab",
-          name: "Submissions",
-        },
-        {
-          type: "tab",
-          name: "Standings",
-        },
-        {
-          type: "tab",
-          name: "Test Cases",
-        },
-        {
-          type: "tab",
-          name: "Statement",
-        },
-      ],
-    },
-  ],
-  layout: {
-    type: "row",
-    weight: 100,
-    children: [],
+export const THEME = createTheme({
+  typography: {
+    fontFamily: `'Montserrat', sans-serif`,
   },
-};
+});

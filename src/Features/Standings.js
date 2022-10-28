@@ -1,4 +1,5 @@
 import { List, ListItem } from "@mui/material";
+import { Box } from "@mui/system";
 import { useContext } from "react";
 import { appContext } from "../App";
 
@@ -6,7 +7,7 @@ export default function Standings() {
   const { state } = useContext(appContext);
   if (state.standings) {
     return (
-      <div className="standings">
+      <Box>
         <List>
           <ListItem>Current rank - {state.standings.rank}</ListItem>
           <ListItem>Accepted / Tried</ListItem>
@@ -16,8 +17,8 @@ export default function Standings() {
             </ListItem>
           ))}
         </List>
-      </div>
+      </Box>
     );
   }
-  return <div>Waiting for rank updates...</div>;
+  return <Box>Waiting for rank updates...</Box>;
 }

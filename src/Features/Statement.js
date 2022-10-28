@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { appContext } from "../App";
-import WebViewer, { Core } from "@pdftron/webviewer";
+import WebViewer from "@pdftron/webviewer";
 export default function Statement() {
   const { state } = useContext(appContext);
   const viewer = useRef(null);

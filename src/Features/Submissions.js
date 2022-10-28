@@ -1,5 +1,4 @@
 import {
-  Paper,
   Table,
   TableBody,
   TableCell,
@@ -7,14 +6,14 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { appContext } from "../App";
-import { CHANGE_SUBMISSIONS } from "../utils/constants";
+import CustomTableBodyCell from "../Components/CustomTableBodyCell";
 import { getColor } from "../utils/functions";
 export default function Submissions() {
-  const { state, dispatch } = useContext(appContext);
+  const { state } = useContext(appContext);
   return (
-    <div className="submissions" style={{ padding: "10px" }}>
+    <div style={{ padding: "10px" }}>
       <TableContainer>
         <Table>
           <TableHead>
@@ -26,15 +25,12 @@ export default function Submissions() {
           </TableHead>
           <TableBody>
             {Array.from(state.submissions).map((row) => (
-              <TableRow key={row.name} sx={{ border: "none" }}>
-                <TableCell>{row.problemId}</TableCell>
-                <TableCell align="right">{row.time}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{ backgroundColor: getColor(row.verdict) }}
-                >
+              <TableRow key={row.time}>
+                <CustomTableBodyCell>{row.problemId}</CustomTableBodyCell>
+                <CustomTableBodyCell>{row.time}</CustomTableBodyCell>
+                <CustomTableBodyCell color={getColor(row.verdict)}>
                   {row.verdict}
-                </TableCell>
+                </CustomTableBodyCell>
               </TableRow>
             ))}
           </TableBody>
