@@ -394,8 +394,7 @@ const compile = async (event) => {
   } else {
     let command = "";
     if (lang.extension === "cpp")
-      command =
-        lang.compiler + lang.compileOptions + ` ${fileLoc} -o ${fileLoc}.exe`;
+      command = `${lang.compiler} ${lang.compileOptions} ${fileLoc} -o ${fileLoc}.exe`;
     runCommand(
       command,
       "",

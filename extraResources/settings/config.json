@@ -1,1 +1,148 @@
-{"editor":"code","defaultUsername":"yohackaboi69","languages":[{"name":"C++ without compile flags","extension":"cpp","template":"template.cpp","compiled":true,"compiler":"g++","interpreter":"","compileOptions":"","runOptions":"","idAtcoder":"4003","idCodeforces":"73"},{"name":"C++ with compile flags","extension":"cpp","template":"template.cpp","compiled":true,"compiler":"g++","interpreter":"","compileOptions":"","runOptions":"","idAtcoder":"4003","idCodeforces":"73"},{"name":"Python","extension":"py","template":"template.py","compiled":false,"compiler":"","interpreter":"python","compileOptions":"","runOptions":"","idAtcoder":"4006","idCodeforces":"70"}],"layout":{"global":{"tabEnableClose":false},"borders":[{"type":"border","size":100,"location":"bottom","children":[]}],"layout":{"type":"row","id":"#dce632b2-c35d-4958-91e9-8ad169ec97b4","children":[{"type":"row","id":"#de4b5d2e-7a44-487a-8e71-641c7d2d14f8","weight":50,"children":[{"type":"row","id":"#a590ed58-b0d5-4aad-a3f4-8793dd950a3d","weight":45.12473398730985,"children":[{"type":"tabset","id":"#d10287e5-894d-4885-81d1-6201ab3541c4","weight":48.88743455497382,"children":[{"type":"tab","id":"#eebac97f-d52f-427e-8953-4027331feabf","name":"Statement"}]},{"type":"tabset","id":"#f055c1ed-1775-4a4b-b880-76c0db5de23e","weight":51.11256544502618,"children":[{"type":"tab","id":"#dd94cd75-db9b-42c8-ae07-d100eb181ace","name":"Test Cases"}],"active":true}]},{"type":"row","id":"#9581fe94-4993-446e-99a0-ad81089cdde5","weight":14.216287875648062,"children":[{"type":"tabset","id":"#ba1e458a-1594-4a40-bb24-94c029b2683e","weight":49.30512299599663,"children":[{"type":"tab","id":"#a925471c-8250-4f54-ad53-67656900498c","name":"Log"}]},{"type":"tabset","id":"#21b96599-ea2b-4a10-b24c-abc07b241520","weight":17.77892504815428,"children":[{"type":"tab","id":"#1d8fca93-e591-4b37-a74a-1b2626455474","name":"Standings"}]},{"type":"tabset","id":"#6f35b1b3-96bc-4810-ba65-58b9e1b2d4b8","weight":19.56516661553496,"children":[{"type":"tab","id":"#dc3d291d-a744-48dc-b4e9-2bb9708d68d3","name":"Submissions"}]},{"type":"tabset","id":"#464f2d01-0bb7-4a59-868f-051ea2993b67","weight":13.350785340314136,"children":[{"type":"tab","id":"#35764a75-3c71-4f37-a715-cd55a6328334","name":"Actions"}]}]}]}]}}}
+{
+  "editor": "code",
+  "defaultUsername": "yohackaboi69",
+  "languages": [
+    {
+      "name": "C++ without compile flags",
+      "extension": "cpp",
+      "template": "template.cpp",
+      "compiled": true,
+      "compiler": "g++",
+      "interpreter": "",
+      "compileOptions": "",
+      "runOptions": "",
+      "idAtcoder": "4003",
+      "idCodeforces": "73"
+    },
+    {
+      "name": "C++ with compile flags",
+      "extension": "cpp",
+      "template": "template.cpp",
+      "compiled": true,
+      "compiler": "g++",
+      "interpreter": "",
+      "compileOptions": "-std=c++17 -g -Wall -Wextra -pedantic -O2 -Wshadow -Wformat=2 -Wfloat-equal -Wconversion -Wlogical-op -Wshift-overflow=2 -Wduplicated-cond -Wcast-qual -Wcast-align -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_FORTIFY_SOURCE=2",
+      "runOptions": "",
+      "idAtcoder": "4003",
+      "idCodeforces": "73"
+    },
+    {
+      "name": "Python",
+      "extension": "py",
+      "template": "template.py",
+      "compiled": false,
+      "compiler": "",
+      "interpreter": "python",
+      "compileOptions": "",
+      "runOptions": "",
+      "idAtcoder": "4006",
+      "idCodeforces": "70"
+    }
+  ],
+  "layout": {
+    "global": { "tabEnableClose": false },
+    "borders": [
+      { "type": "border", "size": 100, "location": "bottom", "children": [] }
+    ],
+    "layout": {
+      "type": "row",
+      "id": "#dce632b2-c35d-4958-91e9-8ad169ec97b4",
+      "children": [
+        {
+          "type": "row",
+          "id": "#de4b5d2e-7a44-487a-8e71-641c7d2d14f8",
+          "weight": 50,
+          "children": [
+            {
+              "type": "row",
+              "id": "#a590ed58-b0d5-4aad-a3f4-8793dd950a3d",
+              "weight": 45.12473398730985,
+              "children": [
+                {
+                  "type": "tabset",
+                  "id": "#d10287e5-894d-4885-81d1-6201ab3541c4",
+                  "weight": 48.88743455497382,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#eebac97f-d52f-427e-8953-4027331feabf",
+                      "name": "Statement"
+                    }
+                  ]
+                },
+                {
+                  "type": "tabset",
+                  "id": "#f055c1ed-1775-4a4b-b880-76c0db5de23e",
+                  "weight": 51.11256544502618,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#dd94cd75-db9b-42c8-ae07-d100eb181ace",
+                      "name": "Test Cases"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "row",
+              "id": "#9581fe94-4993-446e-99a0-ad81089cdde5",
+              "weight": 14.216287875648062,
+              "children": [
+                {
+                  "type": "tabset",
+                  "id": "#ba1e458a-1594-4a40-bb24-94c029b2683e",
+                  "weight": 49.30512299599663,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#a925471c-8250-4f54-ad53-67656900498c",
+                      "name": "Log"
+                    }
+                  ]
+                },
+                {
+                  "type": "tabset",
+                  "id": "#21b96599-ea2b-4a10-b24c-abc07b241520",
+                  "weight": 17.77892504815428,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#1d8fca93-e591-4b37-a74a-1b2626455474",
+                      "name": "Standings"
+                    }
+                  ]
+                },
+                {
+                  "type": "tabset",
+                  "id": "#6f35b1b3-96bc-4810-ba65-58b9e1b2d4b8",
+                  "weight": 19.56516661553496,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#dc3d291d-a744-48dc-b4e9-2bb9708d68d3",
+                      "name": "Submissions"
+                    }
+                  ]
+                },
+                {
+                  "type": "tabset",
+                  "id": "#464f2d01-0bb7-4a59-868f-051ea2993b67",
+                  "weight": 13.350785340314136,
+                  "children": [
+                    {
+                      "type": "tab",
+                      "id": "#35764a75-3c71-4f37-a715-cd55a6328334",
+                      "name": "Actions"
+                    }
+                  ],
+                  "active": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -18,17 +18,12 @@ export default function Statement() {
       });
       setInstance(obj);
       if (state.currentProblem !== null)
-        obj.loadDocument(
-          state.problemDetails[state.problemList[state.currentProblem]]
-            .statement
-        );
+        obj.loadDocument(state.problemList[state.currentProblem].statement);
     });
   }, []);
   useEffect(() => {
     if (instance)
-      instance.loadDocument(
-        state.problemDetails[state.problemList[state.currentProblem]].statement
-      );
+      instance.loadDocument(state.problemList[state.currentProblem].statement);
   }, [state.currentProblem]);
   return (
     <div
