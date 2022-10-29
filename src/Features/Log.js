@@ -9,7 +9,7 @@ export default function Log() {
 
   const { state } = useContext(appContext);
   return (
-    <div className="compile-message">
+    <div style={{ border: "1px solid black" }}>
       <code style={{ whiteSpace: "pre-line" }}>
         <CustomButton title={"Clear Log"} handleClick={clearLog}>
           <Clear />

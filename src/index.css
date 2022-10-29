@@ -2,9 +2,26 @@ body {
   margin: 0;
   font-family: 'Montserrat', sans-serif;
 }
+.selection {
+  display: flex;
+  justify-content: space-around;
+}
+
+.selection-wrapper{
+  display: flex;
+  flex-direction: column;
+  width: 40%;
+}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
     
 }
+.App {
+  width: 100%;
+
+  font-size: 13px;
+  margin: 10px;
+}
+

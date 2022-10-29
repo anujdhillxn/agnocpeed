@@ -3,7 +3,6 @@ import { ReactNotifications } from "react-notifications-component";
 import * as FlexLayout from "flexlayout-react";
 import "flexlayout-react/style/light.css";
 import "react-notifications-component/dist/theme.css";
-import "./App.scss";
 import TestCases from "./Features/TestCases";
 import { INITIAL_STATE, THEME } from "./utils/constants";
 import { Store } from "react-notifications-component";
@@ -14,12 +13,7 @@ import Actions from "./Features/Actions";
 import Log from "./Features/Log";
 import Statement from "./Features/Statement";
 import Standings from "./Features/Standings";
-import {
-  Box,
-  createTheme,
-  experimental_sx,
-  ThemeProvider,
-} from "@mui/material";
+import { Box, ThemeProvider } from "@mui/material";
 import { serialize } from "./utils/functions";
 
 export const appContext = React.createContext(null);
