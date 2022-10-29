@@ -61,7 +61,7 @@ export default function Actions({ model }) {
           }}
           value={state.currentProblem}
           label={"Currently solving"}
-          items={state.problemList}
+          items={state.problemList.map((problem) => problem.id)}
           fullwidth={true}
         />
         <Dropdown
@@ -70,7 +70,7 @@ export default function Actions({ model }) {
           }}
           value={state.currentLanguage}
           label={"Language"}
-          items={Object.keys(state.config.languages)}
+          items={state.config.languages.map((lang) => lang.name)}
           fullwidth={true}
         />
       </Container>

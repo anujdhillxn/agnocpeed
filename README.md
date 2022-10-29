@@ -7,3 +7,4 @@ TODO
 -Add sounds
 -Add future contests
 -remove console logs
+-BUG-Cursor moves to end on editing test case

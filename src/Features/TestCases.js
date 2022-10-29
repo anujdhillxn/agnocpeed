@@ -15,51 +15,31 @@ export default function TestCases() {
         <CustomButton
           title={"Add New Test Case"}
           handleClick={() => {
-            window.api.addNewTestCase(state.problemList[state.currentProblem]);
+            window.api.addNewTestCase();
           }}
         >
           <AddIcon />
         </CustomButton>
         <span>
           Passed -{" "}
-          {countPassed(
-            state.problemDetails[state.problemList[state.currentProblem]]
-              .testCases
-          )}{" "}
-          /
-          {
-            state.problemDetails[state.problemList[state.currentProblem]]
-              .testCases.length
-          }
+          {countPassed(state.problemList[state.currentProblem].testCases)} /
+          {state.problemList[state.currentProblem].testCases.length}
         </span>
-        {countPassed(
-          state.problemDetails[state.problemList[state.currentProblem]]
-            .testCases
-        ) ===
-          state.problemDetails[state.problemList[state.currentProblem]]
-            .testCases.length && <CheckCircleRounded color="success" />}
+        {countPassed(state.problemList[state.currentProblem].testCases) ===
+          state.problemList[state.currentProblem].testCases.length && (
+          <CheckCircleRounded color="success" />
+        )}
       </Box>
-      {state.currentProblem === null ||
-      state.problemList === null ||
-      state.problemDetails === null ||
-      !(state.problemList[state.currentProblem] in state.problemDetails) ||
-      !state.problemDetails[state.problemList[state.currentProblem]]
-        .testCases ||
-      state.problemDetails[state.problemList[state.currentProblem]].testCases
-        .length === 0 ? (
-        <div>No test cases found</div>
-      ) : (
-        <div>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-            <Tabs
-              value={currentTestCase}
-              onChange={(event, newValue) => {
-                setCurrentTestCase(newValue);
-              }}
-            >
-              {state.problemDetails[state.problemList[state.currentProblem]][
-                "testCases"
-              ].map((item, idx) => (
+      <div>
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={currentTestCase}
+            onChange={(event, newValue) => {
+              setCurrentTestCase(newValue);
+            }}
+          >
+            {state.problemList[state.currentProblem].testCases.map(
+              (item, idx) => (
                 <Tab
                   sx={{
                     borderTop: item.verdict
@@ -83,72 +63,75 @@ export default function TestCases() {
                     </span>
                   }
                 />
-              ))}
-            </Tabs>
-          </Box>
-          <div className="test-case" style={{ display: "flex" }}>
-            <div className="input">
-              <TextField
-                maxRows={18}
-                multiline
-                margin="normal"
-                label={"Input"}
-                value={
-                  state.problemDetails[state.problemList[state.currentProblem]]
-                    .testCases[currentTestCase].input
-                }
-                onChange={(e) => {
-                  window.api.changeTestCases(
-                    currentTestCase,
-                    "input",
-                    e.target.value
-                  );
-                }}
-              />
-            </div>
-            <div className="output">
-              <TextField
-                maxRows={18}
-                multiline
-                margin="normal"
-                label={"Expected output"}
-                value={
-                  state.problemDetails[state.problemList[state.currentProblem]]
-                    .testCases[currentTestCase].output
-                }
-                onChange={(e) => {
-                  window.api.changeTestCases(
-                    currentTestCase,
-                    "output",
-                    e.target.value
-                  );
-                }}
-              />
-            </div>
-            <div className="result">
-              <TextField
-                maxRows={18}
-                multiline
-                margin="normal"
-                label={"Your output"}
-                value={
-                  state.problemDetails[state.problemList[state.currentProblem]]
-                    .testCases[currentTestCase].result
-                }
-                disabled
-              />
-            </div>
-          </div>
-          <div className="comments">
-            <p>
-              {
-                state.problemDetails[state.problemList[state.currentProblem]]
-                  .testCases[currentTestCase].comments
+              )
+            )}
+          </Tabs>
+        </Box>
+        <div className="test-case" style={{ display: "flex" }}>
+          <div className="input">
+            <TextField
+              maxRows={18}
+              multiline
+              margin="normal"
+              label={"Input"}
+              value={
+                state.problemList[state.currentProblem].testCases[
+                  currentTestCase
+                ].input
               }
-            </p>
+              onChange={(e) => {
+                window.api.changeTestCases(
+                  currentTestCase,
+                  "input",
+                  e.target.value
+                );
+              }}
+            />
+          </div>
+          <div className="output">
+            <TextField
+              maxRows={18}
+              multiline
+              margin="normal"
+              label={"Expected output"}
+              value={
+                state.problemList[state.currentProblem].testCases[
+                  currentTestCase
+                ].output
+              }
+              onChange={(e) => {
+                window.api.changeTestCases(
+                  currentTestCase,
+                  "output",
+                  e.target.value
+                );
+              }}
+            />
+          </div>
+          <div className="result">
+            <TextField
+              maxRows={18}
+              multiline
+              margin="normal"
+              label={"Your output"}
+              value={
+                state.problemList[state.currentProblem].testCases[
+                  currentTestCase
+                ].result
+              }
+              disabled
+            />
           </div>
         </div>
-      )}
+        <div className="comments">
+          <p>
+            {
+              state.problemList[state.currentProblem].testCases[currentTestCase]
+                .comments
+            }
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

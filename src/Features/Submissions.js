@@ -25,12 +25,13 @@ export default function Submissions() {
           </TableHead>
           <TableBody>
             {Array.from(state.submissions).map((row) => (
-              <TableRow key={row.time}>
+              <TableRow
+                key={row.time}
+                sx={{ borderRight: `5px solid ${getColor(row.verdict)}` }}
+              >
                 <CustomTableBodyCell>{row.problemId}</CustomTableBodyCell>
                 <CustomTableBodyCell>{row.time}</CustomTableBodyCell>
-                <CustomTableBodyCell color={getColor(row.verdict)}>
-                  {row.verdict}
-                </CustomTableBodyCell>
+                <CustomTableBodyCell>{row.verdict}</CustomTableBodyCell>
               </TableRow>
             ))}
           </TableBody>

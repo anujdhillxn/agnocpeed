@@ -7,7 +7,6 @@ module.exports = {
     website: null,
     contestId: null,
     problemList: [],
-    problemDetails: {},
     currentProblem: null,
     currentLanguage: 0,
     submissions: [],

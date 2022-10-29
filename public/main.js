@@ -37,7 +37,6 @@ let configPath = path.join(settingsDir, "config.json");
 let win;
 
 function setState(key, newVal) {
-  console.log("Trying to change", key, "from", state[key], "to", newVal);
   if (state[key] === newVal) return;
   state[key] = newVal;
   win.webContents.send("getState", state);
@@ -89,13 +88,17 @@ const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
 };
 
-const clearTestCases = (problemId) => {
-  let newDetails = { ...state.problemDetails };
-  for (let i = 0; i < newDetails[problemId].testCases.length; i++) {
-    newDetails[problemId].testCases[i].result = "";
-    newDetails[problemId].testCases[i].verdict = "";
+const clearTestCases = () => {
+  let newProblemList = [...state.problemList];
+  for (
+    let i = 0;
+    i < state.problemList[state.currentProblem].testCases.length;
+    i++
+  ) {
+    state.problemList[state.currentProblem].testCases[i].result = "";
+    state.problemList[state.currentProblem].testCases[i].verdict = "";
   }
-  setState("problemDetails", newDetails);
+  setState("problemList", newProblemList);
 };
 
 function addToLog(message) {
@@ -204,7 +207,6 @@ const start = async (event, id) => {
     // });
     setState("problemList", []);
     let newProblemList = [];
-    let newProblemDetails = {};
     win.webContents.send("getLoginMessage", "Collecting tasks...");
     try {
       switch (state.website) {
@@ -214,7 +216,7 @@ const start = async (event, id) => {
           for (let i = 0; i < items.length; i++) {
             let linkText = await items[i].$("a");
             let problemId = await linkText.evaluate((el) => el.innerText);
-            newProblemList.push(problemId);
+            newProblemList.push({ id: problemId, testCases: [] });
           }
           break;
         case ATCODER:
@@ -224,23 +226,30 @@ const start = async (event, id) => {
             return uiElement.children;
           });
           for (let i = 0; i < Object.keys(nodeChildren).length; i++)
-            newProblemList.push(String.fromCharCode(i + 65));
+            newProblemList.push({
+              id: String.fromCharCode(i + 65),
+              testCases: [],
+            });
           break;
         case PRACTICE:
-          newProblemList = ["A", "B", "C", "D"];
-          for (const p in state.problemList) {
-            newProblemDetails[p] = {
-              testcases: [
-                {
-                  input: "",
-                  output: "",
-                  result: "",
-                  verdict: "",
-                  comments: "",
-                },
-              ],
-            };
-          }
+          newProblemList = [
+            {
+              id: "A",
+              testCases: [],
+            },
+            {
+              id: "B",
+              testCases: [],
+            },
+            {
+              id: "C",
+              testCases: [],
+            },
+            {
+              id: "D",
+              testCases: [],
+            },
+          ];
           break;
         default:
           win.webContents.send("getLoginMessage", "Invalid platform!");
@@ -252,19 +261,18 @@ const start = async (event, id) => {
     }
 
     setState("problemList", newProblemList);
-    setState("problemDetails", newProblemDetails);
   }
   setState("contestId", id);
   change(undefined, 0, 0);
 };
 
 const change = async (event, problemId, langId) => {
-  const problemName = state.problemList[problemId];
-  const lang = Object.keys(state.config.languages)[langId];
-  let fileLoc = path.join(contestDir, `${problemName}.${lang}`);
+  const problemName = state.problemList[problemId].id;
+  const lang = state.config.languages[langId];
+  let fileLoc = path.join(contestDir, `${problemName}.${lang.extension}`);
   if (!fs.existsSync(fileLoc)) {
     fs.readFile(
-      `${path.join(settingsDir, state.config.languages[lang].template)}`,
+      `${path.join(settingsDir, lang.template)}`,
       { encoding: "utf-8" },
       function (err, data) {
         if (!err) {
@@ -282,10 +290,7 @@ const change = async (event, problemId, langId) => {
 
   const statementLoc = path.join(contestDir, `${problemName}.pdf`);
   runCommand(`${state.config.editor} -g --goto ${fileLoc}:44:4`);
-  if (
-    !state.problemDetails.hasOwnProperty(problemName) ||
-    state.problemDetails[problemName]["testCases"].length === 0
-  ) {
+  if (state.problemList[problemId].testCases.length === 0) {
     let testCases = [];
     try {
       switch (state.website) {
@@ -369,34 +374,28 @@ const change = async (event, problemId, langId) => {
       addToLog("Error fetching test cases. Try again. " + e);
       return;
     }
-    setState("problemDetails", {
-      ...state.problemDetails,
-      [problemName]: {
-        ...state.problemDetails[problemName],
-        testCases: testCases,
-        statement: statementLoc,
-      },
-    });
+    let newProblemList = [...state.problemList];
+    newProblemList[problemId].testCases = testCases;
+    newProblemList[problemId].statement = statementLoc;
+    setState("problemList", newProblemList);
   }
   setState("currentProblem", problemId);
   setState("currentLanguage", langId);
-  addToLog(`Solving problem ${problemName} in ${lang}`);
+  addToLog(`Solving problem ${problemName} in ${lang.name}`);
 };
 
 const compile = async (event) => {
-  const problemId = state.problemList[state.currentProblem];
-  const lang = Object.keys(state.config.languages)[state.currentLanguage];
-  let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
-  if (!state.config.languages[lang].compiled) {
+  const problemId = state.problemList[state.currentProblem].id;
+  const lang = state.config.languages[state.currentLanguage];
+  let fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
+  if (!lang.compiled) {
     addToLog("No need to compile.");
     sendNotif(0, "No need to compile.");
   } else {
     let command = "";
-    if (lang === "cpp")
+    if (lang.extension === "cpp")
       command =
-        "g++" +
-        state.config.languages[lang].compileOptions +
-        ` ${fileLoc} -o ${fileLoc}.exe`;
+        lang.compiler + lang.compileOptions + ` ${fileLoc} -o ${fileLoc}.exe`;
     runCommand(
       command,
       "",
@@ -414,47 +413,54 @@ const compile = async (event) => {
 };
 
 const run = async (event) => {
-  const problemId = state.problemList[state.currentProblem];
-  const lang = Object.keys(state.config.languages)[state.currentLanguage];
+  const problemId = state.problemList[state.currentProblem].id;
+  const lang = state.config.languages[state.currentLanguage];
   let fileLoc;
-  if (lang === "cpp") {
-    fileLoc = path.join(contestDir, `${problemId}.${lang}.exe`);
+  if (lang.extension === "cpp") {
+    fileLoc = path.join(contestDir, `${problemId}.${lang.extension}.exe`);
   } else {
-    fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+    fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
   }
   if (!fs.existsSync(fileLoc)) {
     addToLog("Executable not found.");
     return 0;
   } else {
-    let command = state.config.languages[lang].runOptions + `${fileLoc}`;
-    clearTestCases(problemId);
-    for (let i = 0; i < state.problemDetails[problemId].testCases.length; i++) {
-      const testCase = state.problemDetails[problemId].testCases[i].input;
+    let command = `${lang.interpreter} ${fileLoc} ${lang.runOptions}`;
+    console.log(command);
+    clearTestCases();
+    for (
+      let i = 0;
+      i < state.problemList[state.currentProblem].testCases.length;
+      i++
+    ) {
+      const testCase =
+        state.problemList[state.currentProblem].testCases[i].input;
       runCommand(
         command,
         testCase,
         5000,
         (err) => {
-          let newDetails = { ...state.problemDetails };
-          newDetails[problemId].testCases[i].comments += err;
-          setState("problemDetails", newDetails);
+          let newProblemList = [...state.problemList];
+          newProblemList[state.currentProblem].testCases[i].comments += err;
+          setState("problemList", newProblemList);
         },
         (out) => {
-          let newDetails = { ...state.problemDetails };
-          newDetails[problemId].testCases[i].result += out;
-          setState("problemDetails", newDetails);
+          let newProblemList = [...state.problemList];
+          newProblemList[state.currentProblem].testCases[i].result += out;
+          setState("problemList", newProblemList);
         },
         (code, signal) => {
-          let newDetails = { ...state.problemDetails };
+          let newProblemList = [...state.problemList];
           if (signal !== null) {
-            newDetails[problemId].testCases[i].verdict = "TLE";
+            newProblemList[state.currentProblem].testCases[i].verdict = "TLE";
           } else {
-            newDetails[problemId].testCases[i].verdict = areEqual(
-              newDetails[problemId].testCases[i].output,
-              newDetails[problemId].testCases[i].result
-            );
+            newProblemList[state.currentProblem].testCases[i].verdict =
+              areEqual(
+                newProblemList[state.currentProblem].testCases[i].output,
+                newProblemList[state.currentProblem].testCases[i].result
+              );
           }
-          setState("problemDetails", newDetails);
+          setState("problemList", newProblemList);
         }
       );
     }
@@ -462,11 +468,11 @@ const run = async (event) => {
 };
 
 const reset = async (event) => {
-  const problemId = state.problemList[state.currentProblem];
-  const lang = Object.keys(state.config.languages)[state.currentLanguage];
-  let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+  const problemId = state.problemList[state.currentProblem].id;
+  const lang = state.config.languages[state.currentLanguage];
+  let fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
   fs.readFile(
-    `${path.join(settingsDir, state.config.languages[lang].template)}`,
+    `${path.join(settingsDir, lang.template)}`,
     { encoding: "utf-8" },
     function (err, data) {
       if (!err) {
@@ -485,18 +491,15 @@ const reset = async (event) => {
 };
 
 const submit = async (event) => {
-  const problemId = state.problemList[state.currentProblem];
-  const lang = Object.keys(state.config.languages)[state.currentLanguage];
-  let fileLoc = path.join(contestDir, `${problemId}.${lang}`);
+  const problemId = state.problemList[state.currentProblem].id;
+  const lang = state.config.languages[state.currentLanguage];
+  let fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
   switch (state.website) {
     case CODEFORCES:
       await mainPage.goto(
         `https://codeforces.com/contest/${state.contestId}/submit/${problemId}`
       );
-      await mainPage.select(
-        'select[name="programTypeId"]',
-        state.config.languages[lang].idCodeforces
-      );
+      await mainPage.select('select[name="programTypeId"]', lang.idCodeforces);
       var uploadButton = await mainPage.$("input[type=file]");
       await uploadButton.uploadFile(fileLoc);
       await mainPage.click("input[value=Submit");
@@ -506,10 +509,7 @@ const submit = async (event) => {
       await mainPage.goto(
         `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemId}`
       );
-      await mainPage.select(
-        'select[name="data.LanguageId"',
-        state.config.languages[lang].idAtcoder
-      );
+      await mainPage.select('select[name="data.LanguageId"', lang.idAtcoder);
       const [fileChooser] = await Promise.all([
         mainPage.waitForFileChooser(),
         mainPage.click("#btn-open-file"),
@@ -535,36 +535,30 @@ const clearLog = async (event) => {
 };
 
 const changeTestCases = async (event, idx, box, text) => {
-  let newDetails = { ...state.problemDetails };
-  newDetails[state.problemList[state.currentProblem]].testCases[idx][box] =
-    text;
-  setState("problemDetails", newDetails);
+  let newProblemList = [...state.problemList];
+  newProblemList[state.currentProblem].testCases[idx][box] = text;
+  setState("problemList", newProblemList);
 };
 
 const addNewTestCase = async (event) => {
-  let newDetails = { ...state.problemDetails };
-  newDetails[state.problemList[state.currentProblem]].testCases.push({
+  let newProblemList = [...state.problemList];
+  newProblemList[state.currentProblem].testCases.push({
     input: "",
     output: "",
     result: "",
     verdict: "",
     comments: "",
   });
-  setState("problemDetails", newDetails);
+  setState("problemList", newProblemList);
 };
 
 const deleteTestCase = async (event, idx) => {
-  let newDetails = { ...state.problemDetails };
-  newDetails[state.problemList[state.currentProblem]].testCases = [
-    ...newDetails[state.problemList[state.currentProblem]].testCases.slice(
-      0,
-      idx
-    ),
-    ...newDetails[state.problemList[state.currentProblem]].testCases.slice(
-      idx + 1
-    ),
+  let newProblemList = [...state.problemList];
+  newProblemList[state.currentProblem].testCases = [
+    ...newProblemList[state.currentProblem].testCases.slice(0, idx),
+    ...newProblemList[state.currentProblem].testCases.slice(idx + 1),
   ];
-  setState("problemDetais", newDetails);
+  setState("problemList", newProblemList);
 };
 
 const updateSubmissions = async () => {
@@ -632,7 +626,7 @@ const updateStandings = async () => {
         const solveRow = await standingsPage.$(".standingsStatisticsRow");
         const counts = await solveRow.$$("td");
         for (let i = 0; i < state.problemList.length; i++) {
-          newStandings.solve[state.problemList[i]] = await counts[
+          newStandings.solve[state.problemList[i].id] = await counts[
             i + 4
           ].evaluate((val) => val.innerText);
         }
@@ -653,7 +647,7 @@ const updateStandings = async () => {
         const solves = await table.$(".standings-statistics");
         const cells = await solves.$$("td");
         for (let i = 1; i < cells.length; i++) {
-          newStandings.solve[state.problemList[i - 1]] = await cells[
+          newStandings.solve[state.problemList[i - 1].id] = await cells[
             i
           ].evaluate((val) => val.innerText);
         }
