@@ -5,9 +5,46 @@ import { countPassed, getColor, isOk } from "../utils/functions";
 import AddIcon from "@mui/icons-material/Add";
 import CustomButton from "../Components/CustomButton";
 import { CheckCircleRounded, Clear } from "@mui/icons-material";
+
+import useKeyboardShortcut from "use-keyboard-shortcut";
 export default function TestCases() {
   const { state } = useContext(appContext);
   const [currentTestCase, setCurrentTestCase] = useState(0);
+
+  useKeyboardShortcut(
+    ["Shift", "ArrowRight"],
+    () =>
+      setCurrentTestCase((val) =>
+        val + 1 < state.problemList[state.currentProblem].testCases.length
+          ? val + 1
+          : val
+      ),
+    { repeatOnHold: false }
+  );
+
+  useKeyboardShortcut(
+    ["Shift", "ArrowLeft"],
+    () => setCurrentTestCase((val) => (val - 1 >= 0 ? val - 1 : val)),
+    { repeatOnHold: false }
+  );
+
+  // useKeyboardShortcut(
+  //   ["Shift", "ArrowDown"],
+  //   () => {
+  //     state.currentProblem + 1 < state.problemList.length &&
+  //       window.api.change(state.currentProblem + 1, state.currentLanguage);
+  //   },
+  //   { repeatOnHold: false }
+  // );
+
+  // useKeyboardShortcut(
+  //   ["Shift", "ArrowUp"],
+  //   () => {
+  //     state.currentProblem - 1 >= 0 &&
+  //       window.api.change(state.currentProblem - 1, state.currentLanguage);
+  //   },
+  //   { repeatOnHold: false }
+  // );
 
   return (
     <div>

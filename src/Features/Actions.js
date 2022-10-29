@@ -8,6 +8,7 @@ import {
 } from "@mui/icons-material";
 import { Container } from "@mui/material";
 import { useContext } from "react";
+import useKeyboardShortcut from "use-keyboard-shortcut";
 import { appContext } from "../App";
 import CustomButton from "../Components/CustomButton";
 import Dropdown from "../Components/Dropdown";
@@ -16,40 +17,56 @@ import { serialize } from "../utils/functions";
 export default function Actions({ model }) {
   const { state } = useContext(appContext);
 
-  const verifyCode = async () => {};
+  const reset = () => {
+    window.api.reset();
+  };
+
+  const compile = () => {
+    window.api.compile();
+  };
+
+  const run = () => {
+    window.api.run();
+  };
+
+  const submit = () => {
+    window.api.submit();
+  };
+  useKeyboardShortcut(state.config.resetHotKeys, reset, {
+    repeatOnHold: false,
+  });
+  useKeyboardShortcut(state.config.compileHotKeys, compile, {
+    repeatOnHold: false,
+  });
+  useKeyboardShortcut(state.config.runHotKeys, run, { repeatOnHold: false });
+  useKeyboardShortcut(state.config.submitHotKeys, submit, {
+    repeatOnHold: false,
+  });
 
   return (
     <div className="actions">
       <Container>
         <CustomButton
-          title={"Reset Code"}
-          handleClick={() => {
-            window.api.reset();
-          }}
+          title={`Reset (${state.config.resetHotKeys})`}
+          handleClick={reset}
         >
           <ReplayRounded />
         </CustomButton>
         <CustomButton
-          title={"Compile"}
-          handleClick={() => {
-            window.api.compile();
-          }}
+          title={`Compile (${state.config.compileHotKeys})`}
+          handleClick={compile}
         >
           <Build />
         </CustomButton>
         <CustomButton
-          title={"Run"}
-          handleClick={() => {
-            window.api.run();
-          }}
+          title={`Run (${state.config.runHotKeys})`}
+          handleClick={run}
         >
           <PlayCircleFilledOutlined />
         </CustomButton>
         <CustomButton
-          title={"Submit"}
-          handleClick={() => {
-            window.api.submit();
-          }}
+          title={`Submit (${state.config.submitHotKeys})`}
+          handleClick={submit}
         >
           <UploadFileRounded />
         </CustomButton>
