@@ -65,18 +65,18 @@ async function init() {
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "./index.html")}`
   );
-  fs.readFile(configPath, "utf8", function (err, data) {
+  if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
+  fs.readFile(configPath, "utf8", async function (err, data) {
     if (err) throw err;
     setState("config", JSON.parse(data));
+    browser = await puppeteer.launch({
+      executablePath: getChromiumExecPath(),
+      headless: state.config.headless,
+    });
+    mainPage = await browser.newPage();
+    submissionPage = await browser.newPage();
+    standingsPage = await browser.newPage();
   });
-  if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
-  browser = await puppeteer.launch({
-    executablePath: getChromiumExecPath(),
-    headless: state.config.headless,
-  });
-  mainPage = await browser.newPage();
-  submissionPage = await browser.newPage();
-  standingsPage = await browser.newPage();
 }
 const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
