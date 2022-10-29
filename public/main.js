@@ -65,6 +65,10 @@ async function init() {
       ? "http://localhost:3000"
       : `file://${path.join(__dirname, "./index.html")}`
   );
+  fs.readFile(configPath, "utf8", function (err, data) {
+    if (err) throw err;
+    setState("config", JSON.parse(data));
+  });
   if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
   browser = await puppeteer.launch({
     executablePath: getChromiumExecPath(),
@@ -73,16 +77,6 @@ async function init() {
   mainPage = await browser.newPage();
   submissionPage = await browser.newPage();
   standingsPage = await browser.newPage();
-  fs.readFile(configPath, "utf8", function (err, data) {
-    if (err) throw err;
-    setState("config", JSON.parse(data));
-  });
-  setInterval(() => {
-    updateSubmissions();
-  }, 5000);
-  setInterval(() => {
-    updateStandings();
-  }, 5000);
 }
 const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
@@ -264,6 +258,14 @@ const start = async (event, id) => {
   }
   setState("contestId", id);
   change(undefined, 0, 0);
+  if (state.website !== PRACTICE) {
+    setInterval(() => {
+      updateSubmissions();
+    }, 5000);
+    setInterval(() => {
+      updateStandings();
+    }, 5000);
+  }
 };
 
 const change = async (event, problemId, langId) => {

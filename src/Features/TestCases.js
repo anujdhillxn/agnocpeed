@@ -26,9 +26,10 @@ export default function TestCases() {
           {state.problemList[state.currentProblem].testCases.length}
         </span>
         {countPassed(state.problemList[state.currentProblem].testCases) ===
-          state.problemList[state.currentProblem].testCases.length && (
-          <CheckCircleRounded color="success" />
-        )}
+          state.problemList[state.currentProblem].testCases.length &&
+          state.problemList[state.currentProblem].testCases.length > 0 && (
+            <CheckCircleRounded color="success" />
+          )}
       </Box>
       <div>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -67,70 +68,75 @@ export default function TestCases() {
             )}
           </Tabs>
         </Box>
-        <div className="test-case" style={{ display: "flex" }}>
-          <div className="input">
-            <TextField
-              maxRows={18}
-              multiline
-              margin="normal"
-              label={"Input"}
-              value={
-                state.problemList[state.currentProblem].testCases[
-                  currentTestCase
-                ].input
-              }
-              onChange={(e) => {
-                window.api.changeTestCases(
-                  currentTestCase,
-                  "input",
-                  e.target.value
-                );
-              }}
-            />
+        {state.problemList[state.currentProblem].testCases.length > 0 && (
+          <div>
+            <div className="test-case" style={{ display: "flex" }}>
+              <div className="input">
+                <TextField
+                  maxRows={18}
+                  multiline
+                  margin="normal"
+                  label={"Input"}
+                  value={
+                    state.problemList[state.currentProblem].testCases[
+                      currentTestCase
+                    ].input
+                  }
+                  onChange={(e) => {
+                    window.api.changeTestCases(
+                      currentTestCase,
+                      "input",
+                      e.target.value
+                    );
+                  }}
+                />
+              </div>
+              <div className="output">
+                <TextField
+                  maxRows={18}
+                  multiline
+                  margin="normal"
+                  label={"Expected output"}
+                  value={
+                    state.problemList[state.currentProblem].testCases[
+                      currentTestCase
+                    ].output
+                  }
+                  onChange={(e) => {
+                    window.api.changeTestCases(
+                      currentTestCase,
+                      "output",
+                      e.target.value
+                    );
+                  }}
+                />
+              </div>
+              <div className="result">
+                <TextField
+                  maxRows={18}
+                  multiline
+                  margin="normal"
+                  label={"Your output"}
+                  value={
+                    state.problemList[state.currentProblem].testCases[
+                      currentTestCase
+                    ].result
+                  }
+                  disabled
+                />
+              </div>
+            </div>
+            <div className="comments">
+              <p>
+                {
+                  state.problemList[state.currentProblem].testCases[
+                    currentTestCase
+                  ].comments
+                }
+              </p>
+            </div>
           </div>
-          <div className="output">
-            <TextField
-              maxRows={18}
-              multiline
-              margin="normal"
-              label={"Expected output"}
-              value={
-                state.problemList[state.currentProblem].testCases[
-                  currentTestCase
-                ].output
-              }
-              onChange={(e) => {
-                window.api.changeTestCases(
-                  currentTestCase,
-                  "output",
-                  e.target.value
-                );
-              }}
-            />
-          </div>
-          <div className="result">
-            <TextField
-              maxRows={18}
-              multiline
-              margin="normal"
-              label={"Your output"}
-              value={
-                state.problemList[state.currentProblem].testCases[
-                  currentTestCase
-                ].result
-              }
-              disabled
-            />
-          </div>
-        </div>
-        <div className="comments">
-          <p>
-            {
-              state.problemList[state.currentProblem].testCases[currentTestCase]
-                .comments
-            }
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
