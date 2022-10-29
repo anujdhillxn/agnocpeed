@@ -39,6 +39,7 @@
       "idCodeforces": "70"
     }
   ],
+  "headless": true,
   "layout": {
     "global": { "tabEnableClose": false },
     "borders": [

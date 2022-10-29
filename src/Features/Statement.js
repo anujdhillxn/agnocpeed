@@ -17,12 +17,12 @@ export default function Statement() {
         obj.UI.setFitMode(obj.UI.FitMode.FitWidth);
       });
       setInstance(obj);
-      if (state.currentProblem !== null)
+      if (state.currentProblem !== null && state.website !== "practice")
         obj.loadDocument(state.problemList[state.currentProblem].statement);
     });
   }, []);
   useEffect(() => {
-    if (instance)
+    if (instance && state.website !== "practice")
       instance.loadDocument(state.problemList[state.currentProblem].statement);
   }, [state.currentProblem]);
   return (

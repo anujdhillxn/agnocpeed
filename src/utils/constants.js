@@ -1,7 +1,7 @@
-import { createTheme, makeStyles } from "@mui/material";
+import { createTheme } from "@mui/material";
 
 export const PLATFORM_NAMES = ["codeforces", "atcoder", "codechef", "practice"];
-export const ACCEPTED_VERDICTS = ["AC", "Accepted"];
+export const ACCEPTED_VERDICTS = ["AC", "Accepted", "Pretests passed"];
 export const REJECTED_VERDICTS = [
   "TLE",
   "MLE",

@@ -15,7 +15,6 @@ import Statement from "./Features/Statement";
 import Standings from "./Features/Standings";
 import { Box, ThemeProvider } from "@mui/material";
 import { serialize } from "./utils/functions";
-
 export const appContext = React.createContext(null);
 
 export default function App() {

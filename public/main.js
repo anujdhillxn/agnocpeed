@@ -68,7 +68,7 @@ async function init() {
   if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
   browser = await puppeteer.launch({
     executablePath: getChromiumExecPath(),
-    headless: true,
+    headless: state.config.headless,
   });
   mainPage = await browser.newPage();
   submissionPage = await browser.newPage();
@@ -295,15 +295,12 @@ const change = async (event, problemId, langId) => {
     try {
       switch (state.website) {
         case CODEFORCES:
-          if (!fs.existsSync(statementLoc)) {
-            await mainPage.goto(
-              `https://codeforces.com/contest/${state.contestId}/problem/${problemName}`
-            );
-            await mainPage.pdf({ path: statementLoc });
-          }
           await mainPage.goto(
             `https://codeforces.com/contest/${state.contestId}/problem/${problemName}`
           );
+          if (!fs.existsSync(statementLoc)) {
+            await mainPage.pdf({ path: statementLoc });
+          }
 
           inputTexts = await mainPage.$$(".input");
           outputTexts = await mainPage.$$(".output");
@@ -324,15 +321,12 @@ const change = async (event, problemId, langId) => {
           break;
 
         case ATCODER:
-          if (!fs.existsSync(statementLoc)) {
-            await mainPage.goto(
-              `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemName}`
-            );
-            await mainPage.pdf({ path: statementLoc });
-          }
           await mainPage.goto(
             `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemName}`
           );
+          if (!fs.existsSync(statementLoc)) {
+            await mainPage.pdf({ path: statementLoc });
+          }
           let count = 0,
             started = false,
             index = 0,
