@@ -1,10 +1,10 @@
 Build steps
--npm install
--npm run electron:build
+-> npm install
+-> npm run electron:build
 
 TODO
--Add shortcuts
--Add sounds
--Add future contests
--remove console logs
--BUG-Cursor moves to end on editing test case
+-> Add shortcuts
+-> Add sounds
+-> Add future contests
+-> remove console logs
+-> BUG-Cursor moves to end on editing test case
