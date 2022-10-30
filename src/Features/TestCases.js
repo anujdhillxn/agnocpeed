@@ -93,6 +93,15 @@ export default function TestCases() {
                         size="small"
                         onClick={(event) => {
                           event.stopPropagation();
+                          if (
+                            state.problemList[state.currentProblem].testCases
+                              .length > 1 &&
+                            currentTestCase ===
+                              state.problemList[state.currentProblem].testCases
+                                .length -
+                                1
+                          )
+                            setCurrentTestCase((val) => val - 1);
                           window.api.deleteTestCase(idx);
                         }}
                       >
