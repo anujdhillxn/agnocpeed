@@ -47,7 +47,7 @@ export default function TestCases() {
   // );
 
   return (
-    <div>
+    <div style={{ margin: "10px" }}>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <CustomButton
           title={"Add New Test Case"}

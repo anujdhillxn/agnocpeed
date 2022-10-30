@@ -44,7 +44,7 @@ export default function Actions({ model }) {
   });
 
   return (
-    <div className="actions">
+    <div style={{ margin: "10px" }} className="actions">
       <Container>
         <CustomButton
           title={`Reset (${state.config.resetHotKeys})`}

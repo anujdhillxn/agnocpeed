@@ -8,6 +8,8 @@ const {
   runCommandSync,
   runCommand,
   areEqual,
+  getColor,
+  playSound,
 } = require("./utils/functions");
 const {
   CODEFORCES,
@@ -33,11 +35,24 @@ let settingsDir = isDev
   ? path.join(__dirname, "../extraResources/settings")
   : path.join(process.resourcesPath, "extraResources/settings");
 let configPath = path.join(settingsDir, "config.json");
-
+let submittedOnce = false;
 let win;
 
 function setState(key, newVal) {
   if (state[key] === newVal) return;
+  if (key === "submissions" && submittedOnce) {
+    if (
+      state.submissions.length < newVal.length ||
+      (state.submissions.length === newVal.length &&
+        newVal.length > 0 &&
+        getColor(state.submissions[0].verdict) === "yellow")
+    ) {
+      if (getColor(newVal[0].verdict) === "lightgreen")
+        playSound(path.join(settingsDir, "win.mp3"));
+      else if (getColor(newVal[0].verdict) === "red")
+        playSound(path.join(settingsDir, "lose.mp3"));
+    }
+  }
   state[key] = newVal;
   win.webContents.send("getState", state);
   if (key === "config") {
@@ -66,20 +81,71 @@ async function init() {
       : `file://${path.join(__dirname, "./index.html")}`
   );
   if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
+  browser = await puppeteer.launch({
+    executablePath: getChromiumExecPath(),
+    headless: true,
+  });
   fs.readFile(configPath, "utf8", async function (err, data) {
     if (err) throw err;
     setState("config", JSON.parse(data));
-    browser = await puppeteer.launch({
-      executablePath: getChromiumExecPath(),
-      headless: state.config.headless,
-    });
     mainPage = await browser.newPage();
     submissionPage = await browser.newPage();
     standingsPage = await browser.newPage();
+    getFutureContests();
   });
 }
 const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
+};
+
+const getFutureContests = async () => {
+  if (state.contestId === null) {
+    const futureContests = [];
+    await submissionPage.goto("https://codeforces.com/contests");
+    await submissionPage.waitForSelector(".datatable");
+    let tableContainer = await submissionPage.$(".datatable");
+    let table = await tableContainer.$("tbody");
+    let rows = await table.$$("tr");
+    for (let i = 1; i < rows.length; i++) {
+      const cells = await rows[i].$$("td");
+      const data = [];
+      for (const cell of cells) {
+        const val = await cell.evaluate((val) => val.innerText);
+        data.push(val);
+      }
+      futureContests.push({
+        id: await rows[i].evaluate((row) => row.getAttribute("data-contestid")),
+        name: data[0],
+        startTime: data[2],
+        platform: CODEFORCES,
+      });
+    }
+    await standingsPage.goto("https://atcoder.jp/");
+    tableContainer = await standingsPage.waitForSelector(
+      "#contest-table-upcoming"
+    );
+    table = await tableContainer.$("tbody");
+    rows = await table.$$("tr");
+    for (let i = 0; i < rows.length; i++) {
+      const cells = await rows[i].$$("td");
+      const data = [];
+      for (const cell of cells) {
+        const val = await cell.evaluate((val) => val.innerText);
+        data.push(val);
+      }
+      const link = await cells[1].$("a");
+      futureContests.push({
+        id: await link.evaluate((node) => {
+          const data = node.getAttribute("href").split("/");
+          return data[data.length - 1];
+        }),
+        name: await link.evaluate((node) => node.innerText),
+        startTime: data[0],
+        platform: ATCODER,
+      });
+    }
+    setState("futureContests", futureContests);
+  }
 };
 
 const clearTestCases = () => {
@@ -291,7 +357,6 @@ const change = async (event, problemId, langId) => {
   }
 
   const statementLoc = path.join(contestDir, `${problemName}.pdf`);
-  runCommand(`${state.config.editor} -g --goto ${fileLoc}:44:4`);
   if (state.problemList[problemId].testCases.length === 0) {
     let testCases = [];
     try {
@@ -378,6 +443,7 @@ const change = async (event, problemId, langId) => {
   setState("currentProblem", problemId);
   setState("currentLanguage", langId);
   addToLog(`Solving problem ${problemName} in ${lang.name}`);
+  runCommand(`${state.config.editor} ${fileLoc}`);
 };
 
 const compile = async (event) => {
@@ -499,6 +565,7 @@ const submit = async (event) => {
       await uploadButton.uploadFile(fileLoc);
       await mainPage.click("input[value=Submit");
       sendNotif(0, "Code submitted.");
+      submittedOnce = true;
       break;
     case ATCODER:
       await mainPage.goto(
@@ -512,6 +579,7 @@ const submit = async (event) => {
       await fileChooser.accept([fileLoc]);
       await mainPage.click("#submit");
       sendNotif(0, "Code submitted.");
+      submittedOnce = true;
       break;
     default:
       addToLog("Invalid platform.");
@@ -535,6 +603,38 @@ const changeTestCases = async (event, idx, box, text) => {
   setState("problemList", newProblemList);
 };
 
+const changeConfig = (event, key, newVal) => {
+  let newConfig = { ...state.config };
+  newConfig[key] = newVal;
+  setState("config", newConfig);
+};
+
+const changeLangConfig = (event, langId, key, newVal) => {
+  let newConfig = { ...state.config };
+  newConfig.languages[langId][key] = newVal;
+  setState("config", newConfig);
+};
+
+const addNewLanguage = (event) => {
+  console.log("Hi");
+  let newConfig = { ...state.config };
+  newConfig.languages.push({
+    name: "Display name",
+    extension: "",
+    template: "Should be placed in extraResources/settings",
+    compiled: 0,
+    compiler: "",
+    interpreter: "",
+    compileOptions: "",
+    runOptions: "",
+    idAtcoder:
+      "Inspect the select tag on dropdown while submitting on atcoder and find out the one needed",
+    idCodeforces:
+      "Inspect the select tag on dropdown while submitting on codeforces and find out the one needed",
+  });
+  setState("config", newConfig);
+};
+
 const addNewTestCase = async (event) => {
   let newProblemList = [...state.problemList];
   newProblemList[state.currentProblem].testCases.push({
@@ -554,6 +654,15 @@ const deleteTestCase = async (event, idx) => {
     ...newProblemList[state.currentProblem].testCases.slice(idx + 1),
   ];
   setState("problemList", newProblemList);
+};
+
+const deleteLanguage = async (event, idx) => {
+  let newConfig = { ...state.config };
+  newConfig.languages = [
+    ...newConfig.languages.slice(0, idx),
+    ...newConfig.languages.slice(idx + 1),
+  ];
+  setState("config", newConfig);
 };
 
 const updateSubmissions = async () => {
@@ -679,3 +788,7 @@ ipcMain.on("clearLog", clearLog);
 ipcMain.on("changeTestCases", changeTestCases);
 ipcMain.on("addNewTestCase", addNewTestCase);
 ipcMain.on("deleteTestCase", deleteTestCase);
+ipcMain.on("changeConfig", changeConfig);
+ipcMain.on("changeLangConfig", changeLangConfig);
+ipcMain.on("addNewLanguage", addNewLanguage);
+ipcMain.on("deleteLanguage", deleteLanguage);

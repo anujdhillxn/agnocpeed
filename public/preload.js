@@ -16,10 +16,15 @@ const API = {
   deleteTestCase: (idx) => ipcRenderer.send("deleteTestCase", idx),
   saveLayout: (newLayout) => ipcRenderer.send("saveLayout", newLayout),
   clearLog: () => ipcRenderer.send("clearLog"),
+  changeConfig: (key, newVal) => ipcRenderer.send("changeConfig", key, newVal),
+  changeLangConfig: (langId, key, newVal) =>
+    ipcRenderer.send("changeLangConfig", langId, key, newVal),
   notif: (callback) =>
     ipcRenderer.on("notif", (event, args) => {
       callback(args);
     }),
+  addNewLanguage: () => ipcRenderer.send("addNewLanguage"),
+  deleteLanguage: (idx) => ipcRenderer.send("deleteLanguage", idx),
   getLoginMessage: (callback) =>
     ipcRenderer.on("getLoginMessage", (event, args) => {
       callback(args);

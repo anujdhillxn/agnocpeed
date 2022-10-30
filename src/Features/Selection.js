@@ -1,8 +1,20 @@
 import { Login, Start } from "@mui/icons-material";
-import { Box, FormControl, InputLabel, OutlinedInput } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import { useState, useEffect, useContext } from "react";
 import { appContext } from "../App";
 import CustomButton from "../Components/CustomButton";
+import CustomTableBodyCell from "../Components/CustomTableBodyCell";
 import Dropdown from "../Components/Dropdown";
 import { PLATFORM_NAMES } from "../utils/constants";
 
@@ -30,7 +42,33 @@ export default function Selection() {
   };
 
   return (
-    <div className="selection">
+    <div style={{ margin: "10px" }} className="selection">
+      <div style={{ width: "50%" }}>
+        <Box border={1} borderRadius={1} borderColor={"divider"}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Contest ID</TableCell>
+                  <TableCell>Contest Name</TableCell>
+                  <TableCell>Platform</TableCell>
+                  <TableCell>Start Time</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {state.futureContests.map((row) => (
+                  <TableRow>
+                    <CustomTableBodyCell>{row.id}</CustomTableBodyCell>
+                    <CustomTableBodyCell>{row.name}</CustomTableBodyCell>
+                    <CustomTableBodyCell>{row.platform}</CustomTableBodyCell>
+                    <CustomTableBodyCell>{row.startTime}</CustomTableBodyCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </div>
       <div className="selection-wrapper">
         <FormControl variant="outlined" margin="dense">
           <InputLabel htmlFor="username">Username</InputLabel>

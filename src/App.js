@@ -15,6 +15,7 @@ import Statement from "./Features/Statement";
 import Standings from "./Features/Standings";
 import { Box, ThemeProvider } from "@mui/material";
 import { serialize } from "./utils/functions";
+import Settings from "./Features/Settings";
 export const appContext = React.createContext(null);
 
 export default function App() {
@@ -44,6 +45,7 @@ export default function App() {
     else if (name === "Log") return <Log />;
     else if (name === "Submissions") return <Submissions />;
     else if (name === "Statement") return <Statement />;
+    else if (name === "Settings") return <Settings />;
     else return <TestCases />;
   };
 

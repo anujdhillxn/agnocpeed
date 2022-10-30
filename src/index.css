@@ -8,9 +8,10 @@ body {
 }
 
 .selection-wrapper{
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  width: 40%;
+  width: 50%;
 }
 
 code {
@@ -19,8 +20,6 @@ code {
     
 }
 .App {
-  width: 100%;
-
   font-size: 13px;
   margin: 10px;
 }

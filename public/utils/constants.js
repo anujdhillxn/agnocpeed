@@ -13,5 +13,6 @@ module.exports = {
     standings: null,
     log: "",
     config: null,
+    futureContests: [],
   },
 };
