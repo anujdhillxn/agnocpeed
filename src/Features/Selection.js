@@ -17,6 +17,7 @@ import CustomButton from "../Components/CustomButton";
 import CustomTableBodyCell from "../Components/CustomTableBodyCell";
 import Dropdown from "../Components/Dropdown";
 import { PLATFORM_NAMES } from "../utils/constants";
+import Settings from "./Settings";
 
 export default function Selection() {
   const { state } = useContext(appContext);
@@ -44,30 +45,7 @@ export default function Selection() {
   return (
     <div style={{ margin: "10px" }} className="selection">
       <div style={{ width: "50%" }}>
-        <Box border={1} borderRadius={1} borderColor={"divider"}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Contest ID</TableCell>
-                  <TableCell>Contest Name</TableCell>
-                  <TableCell>Platform</TableCell>
-                  <TableCell>Start Time</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {state.futureContests.map((row) => (
-                  <TableRow>
-                    <CustomTableBodyCell>{row.id}</CustomTableBodyCell>
-                    <CustomTableBodyCell>{row.name}</CustomTableBodyCell>
-                    <CustomTableBodyCell>{row.platform}</CustomTableBodyCell>
-                    <CustomTableBodyCell>{row.startTime}</CustomTableBodyCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+        <Settings />
       </div>
       <div className="selection-wrapper">
         <Dropdown
@@ -104,7 +82,31 @@ export default function Selection() {
             <Start />
           </CustomButton>
         </Box>
-        <Box className="status">{startMessage}</Box>
+        <Box borderBottom={1} borderColor="divider" className="status">
+          {startMessage}
+        </Box>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Contest ID</TableCell>
+                <TableCell>Contest Name</TableCell>
+                <TableCell>Platform</TableCell>
+                <TableCell>Start Time</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {state.futureContests.map((row) => (
+                <TableRow>
+                  <CustomTableBodyCell>{row.id}</CustomTableBodyCell>
+                  <CustomTableBodyCell>{row.name}</CustomTableBodyCell>
+                  <CustomTableBodyCell>{row.platform}</CustomTableBodyCell>
+                  <CustomTableBodyCell>{row.startTime}</CustomTableBodyCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </div>
     </div>
   );

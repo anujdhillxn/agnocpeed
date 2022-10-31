@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
+const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const isDev = require("electron-is-dev");
@@ -6,7 +7,6 @@ const puppeteer = require("puppeteer");
 const {
   getChromiumExecPath,
   runCommandSync,
-  runCommand,
   areEqual,
   getColor,
   playSound,
@@ -173,6 +173,35 @@ const closeWindow = () => {
     app.quit();
   }
 };
+
+function runCommand(
+  command,
+  input = "",
+  timeout = 0,
+  err = (data) => {},
+  out = (data) => {},
+  close = (code, signal) => {}
+) {
+  const res = exec(command, {
+    encoding: "utf8",
+    timeout: timeout,
+    killSignal: "SIGINT",
+  });
+  res.stdin.write(input);
+  res.stdin.end();
+  res.stderr.on("data", (data) => {
+    addToLog(data);
+    err(data);
+  });
+  res.stdout.on("data", (data) => {
+    addToLog(data);
+    out(data);
+  });
+  res.on("close", (code, signal) => {
+    close(code, signal);
+  });
+  //TODO: Handle run Command properly.
+}
 
 const clearCookies = () => {};
 
@@ -446,7 +475,6 @@ const compile = async (event) => {
       "",
       0,
       (data) => {
-        addToLog(data);
         sendNotif(1, "Compilation failed. Check the log for errors.");
       },
       (data) => {},
@@ -471,7 +499,6 @@ const run = async (event) => {
     return 0;
   } else {
     let command = `${lang.interpreter} ${fileLoc} ${lang.runOptions}`;
-    console.log(command);
     clearTestCases();
     for (
       let i = 0;
@@ -483,7 +510,7 @@ const run = async (event) => {
       runCommand(
         command,
         testCase,
-        5000,
+        Number(state.config.timeLimit) * 1000,
         (err) => {
           let newProblemList = [...state.problemList];
           newProblemList[state.currentProblem].testCases[i].comments += err;
@@ -498,6 +525,8 @@ const run = async (event) => {
           let newProblemList = [...state.problemList];
           if (signal !== null) {
             newProblemList[state.currentProblem].testCases[i].verdict = "TLE";
+            newProblemList[state.currentProblem].testCases[i].comments =
+              "Time Limit Exceeded.";
           } else {
             newProblemList[state.currentProblem].testCases[i].verdict =
               areEqual(

@@ -1,4 +1,4 @@
-const { exec, execSync } = require("child_process");
+const { execSync } = require("child_process");
 const puppeteer = require("puppeteer");
 const sound = require("sound-play");
 const ACCEPTED_VERDICTS = ["AC", "Accepted", "Pretests passed"];
@@ -36,34 +36,6 @@ const getColor = (verdict) => {
   return "yellow";
 };
 
-function runCommand(
-  command,
-  input = "",
-  timeout = 0,
-  err = (data) => {},
-  out = (data) => {},
-  close = (code, signal) => {}
-) {
-  const res = exec(command, {
-    encoding: "utf8",
-    timeout: timeout,
-    killSignal: "SIGINT",
-  });
-  res.stdin.write(input);
-  res.stdin.end();
-  res.stderr.on("data", (data) => {
-    console.log(data);
-    err(data);
-  });
-  res.stdout.on("data", (data) => {
-    out(data);
-  });
-  res.on("close", (code, signal) => {
-    close(code, signal);
-  });
-  //TODO: Handle run Command properly.
-}
-
 function runCommandSync(command) {
   execSync(command);
 }
@@ -75,7 +47,6 @@ const playSound = (filePath) => {
 module.exports = {
   getChromiumExecPath: getChromiumExecPath,
   areEqual: areEqual,
-  runCommand: runCommand,
   runCommandSync: runCommandSync,
   getColor: getColor,
   playSound: playSound,
