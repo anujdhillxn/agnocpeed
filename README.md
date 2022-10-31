@@ -1,8 +1,13 @@
-Build steps
--> npm install
--> npm run electron:build
+#AGNOCPEED
 
-TODO
--> remove console logs
--> BUG-Cursor moves to end on editing test case
--> BUG-Infinite loops don't terminate after timeout in windows
+##Build steps
+Git, NodeJS and NPM must be installed. Then type the following in a terminal to generate a build for your OS.
+
+```
+git clone https://github.com/anujdhillxn/agnocpeed.git
+npm install
+npm run electron:build
+```
+
+##Known bugs
+-> Infinite loops don't terminate after timeout in windows
