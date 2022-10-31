@@ -47,6 +47,11 @@ A Build will be generated in the dist folder. The dist folder will contain an in
 
 - stdout or stderr of every command run by agnocpeed is displayed in the log.
 
+### Submissions
+
+- resources/extraResources/win.mp3 will be played when a new successful submission with a positive verdict is detected.
+- resources/extraResources/lose.mp3 will be played when a new successful submission with a negative verdict is detected.
+
 ## Following features will be added if the app gains popularity among the competitive programming community.
 
 - Support for Codechef.
