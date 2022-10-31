@@ -12,4 +12,4 @@ npm run electron:build
 
 ## Known bugs
 
--> Infinite loops don't terminate after timeout in windows
+Infinite loops don't terminate after timeout in windows
