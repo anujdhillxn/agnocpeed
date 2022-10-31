@@ -81,13 +81,13 @@ async function init() {
       : `file://${path.join(__dirname, "./index.html")}`
   );
   if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
-  browser = await puppeteer.launch({
-    executablePath: getChromiumExecPath(),
-    headless: true,
-  });
   fs.readFile(configPath, "utf8", async function (err, data) {
     if (err) throw err;
     setState("config", JSON.parse(data));
+    browser = await puppeteer.launch({
+      executablePath: getChromiumExecPath(),
+      headless: state.config.headless,
+    });
     mainPage = await browser.newPage();
     submissionPage = await browser.newPage();
     standingsPage = await browser.newPage();
@@ -120,6 +120,7 @@ const getFutureContests = async () => {
         platform: CODEFORCES,
       });
     }
+    setState("futureContests", [...futureContests]);
     await standingsPage.goto("https://atcoder.jp/");
     tableContainer = await standingsPage.waitForSelector(
       "#contest-table-upcoming"
@@ -157,6 +158,7 @@ const clearTestCases = () => {
   ) {
     state.problemList[state.currentProblem].testCases[i].result = "";
     state.problemList[state.currentProblem].testCases[i].verdict = "";
+    state.problemList[state.currentProblem].testCases[i].comments = "";
   }
   setState("problemList", newProblemList);
 };

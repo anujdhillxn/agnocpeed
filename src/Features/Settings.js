@@ -19,22 +19,22 @@ export default function Settings() {
   const [displayedLang, setDisplayedLang] = useState(0);
   return (
     <div style={{ margin: "10px" }}>
-      <CustomInput
-        id="editor"
-        label="Editor"
-        value={state.config.editor}
-        handleChange={(event) =>
-          window.api.changeConfig("editor", event.target.value)
-        }
-      />
-      <CustomInput
-        id="defaultUsername"
-        label="Default Username"
-        value={state.config.defaultUsername}
-        handleChange={(event) =>
-          window.api.changeConfig("defaultUsername", event.target.value)
-        }
-      />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}>
+        {Object.keys(state.config).map((key) =>
+          key !== "layout" && key !== "languages" ? (
+            <CustomInput
+              id={key}
+              label={key}
+              value={state.config[key]}
+              handleChange={(event) =>
+                window.api.changeConfig(key, event.target.value)
+              }
+            />
+          ) : (
+            ""
+          )
+        )}
+      </div>
       <Box borderTop={1} borderColor="divider">
         {" "}
         <h3>
@@ -65,6 +65,11 @@ export default function Settings() {
                     size="small"
                     onClick={(event) => {
                       event.stopPropagation();
+                      if (
+                        state.config.languages.length > 1 &&
+                        displayedLang === state.config.languages.length - 1
+                      )
+                        setDisplayedLang((val) => val - 1);
                       window.api.deleteLanguage(idx);
                     }}
                   >
@@ -92,36 +97,20 @@ export default function Settings() {
           <div
             style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}
           >
-            {Object.keys(state.config.languages[displayedLang]).map((key) =>
-              key !== "compiled" ? (
-                <CustomInput
-                  id={key}
-                  label={key}
-                  value={state.config.languages[displayedLang][key]}
-                  handleChange={(event) =>
-                    window.api.changeLangConfig(
-                      displayedLang,
-                      key,
-                      event.target.value
-                    )
-                  }
-                />
-              ) : (
-                ""
-              )
-            )}
-            <Dropdown
-              value={state.config.languages[displayedLang].compiled}
-              label="Compiled"
-              items={["No", "Yes"]}
-              handleChange={(event) =>
-                window.api.changeLangConfig(
-                  displayedLang,
-                  "compiled",
-                  event.target.value
-                )
-              }
-            />
+            {Object.keys(state.config.languages[displayedLang]).map((key) => (
+              <CustomInput
+                id={key}
+                label={key}
+                value={state.config.languages[displayedLang][key]}
+                handleChange={(event) =>
+                  window.api.changeLangConfig(
+                    displayedLang,
+                    key,
+                    event.target.value
+                  )
+                }
+              />
+            ))}
           </div>
         </Box>
       </Box>

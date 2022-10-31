@@ -7,6 +7,7 @@ import CustomButton from "../Components/CustomButton";
 import { CheckCircleRounded, Clear } from "@mui/icons-material";
 
 import useKeyboardShortcut from "use-keyboard-shortcut";
+import CustomInput from "../Components/CustomInput";
 export default function TestCases() {
   const { state } = useContext(appContext);
   const [currentTestCase, setCurrentTestCase] = useState(0);
@@ -117,60 +118,51 @@ export default function TestCases() {
         {state.problemList[state.currentProblem].testCases.length > 0 && (
           <div>
             <div className="test-case" style={{ display: "flex" }}>
-              <div className="input">
-                <TextField
-                  maxRows={18}
-                  multiline
-                  margin="normal"
-                  label={"Input"}
-                  value={
-                    state.problemList[state.currentProblem].testCases[
-                      currentTestCase
-                    ].input
-                  }
-                  onChange={(e) => {
-                    window.api.changeTestCases(
-                      currentTestCase,
-                      "input",
-                      e.target.value
-                    );
-                  }}
-                />
-              </div>
-              <div className="output">
-                <TextField
-                  maxRows={18}
-                  multiline
-                  margin="normal"
-                  label={"Expected output"}
-                  value={
-                    state.problemList[state.currentProblem].testCases[
-                      currentTestCase
-                    ].output
-                  }
-                  onChange={(e) => {
-                    window.api.changeTestCases(
-                      currentTestCase,
-                      "output",
-                      e.target.value
-                    );
-                  }}
-                />
-              </div>
-              <div className="result">
-                <TextField
-                  maxRows={18}
-                  multiline
-                  margin="normal"
-                  label={"Your output"}
-                  value={
-                    state.problemList[state.currentProblem].testCases[
-                      currentTestCase
-                    ].result
-                  }
-                  disabled
-                />
-              </div>
+              <CustomInput
+                multiline={true}
+                id="input"
+                label={"Input"}
+                value={
+                  state.problemList[state.currentProblem].testCases[
+                    currentTestCase
+                  ].input
+                }
+                handleChange={(e) => {
+                  window.api.changeTestCases(
+                    currentTestCase,
+                    "input",
+                    e.target.value
+                  );
+                }}
+              />
+              <CustomInput
+                multiline={true}
+                id="output"
+                label={"Expected output"}
+                value={
+                  state.problemList[state.currentProblem].testCases[
+                    currentTestCase
+                  ].output
+                }
+                handleChange={(e) => {
+                  window.api.changeTestCases(
+                    currentTestCase,
+                    "output",
+                    e.target.value
+                  );
+                }}
+              />
+              <CustomInput
+                multiline={true}
+                id="result"
+                label={"Your output"}
+                value={
+                  state.problemList[state.currentProblem].testCases[
+                    currentTestCase
+                  ].result
+                }
+                disabled={true}
+              />
             </div>
             <div className="comments">
               <p>

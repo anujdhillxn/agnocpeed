@@ -32,14 +32,16 @@ export default function Actions({ model }) {
   const submit = () => {
     window.api.submit();
   };
-  useKeyboardShortcut(state.config.resetHotKeys, reset, {
+  useKeyboardShortcut(state.config.resetHotKeys.split("+"), reset, {
     repeatOnHold: false,
   });
-  useKeyboardShortcut(state.config.compileHotKeys, compile, {
+  useKeyboardShortcut(state.config.compileHotKeys.split("+"), compile, {
     repeatOnHold: false,
   });
-  useKeyboardShortcut(state.config.runHotKeys, run, { repeatOnHold: false });
-  useKeyboardShortcut(state.config.submitHotKeys, submit, {
+  useKeyboardShortcut(state.config.runHotKeys.split("+"), run, {
+    repeatOnHold: false,
+  });
+  useKeyboardShortcut(state.config.submitHotKeys.split("+"), submit, {
     repeatOnHold: false,
   });
 
