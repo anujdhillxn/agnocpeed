@@ -6,20 +6,21 @@ export default function Statement() {
   const viewer = useRef(null);
   const [instance, setInstance] = useState(null);
   useEffect(() => {
-    WebViewer(
-      {
-        path: "./lib",
-      },
-      viewer.current
-    ).then((obj) => {
-      const { documentViewer } = obj.Core;
-      documentViewer.addEventListener("documentLoaded", () => {
-        obj.UI.setFitMode(obj.UI.FitMode.FitWidth);
+    if (state.website !== "practice")
+      WebViewer(
+        {
+          path: "./lib",
+        },
+        viewer.current
+      ).then((obj) => {
+        const { documentViewer } = obj.Core;
+        documentViewer.addEventListener("documentLoaded", () => {
+          obj.UI.setFitMode(obj.UI.FitMode.FitWidth);
+        });
+        setInstance(obj);
+        if (state.currentProblem !== null && state.website !== "practice")
+          obj.loadDocument(state.problemList[state.currentProblem].statement);
       });
-      setInstance(obj);
-      if (state.currentProblem !== null && state.website !== "practice")
-        obj.loadDocument(state.problemList[state.currentProblem].statement);
-    });
   }, []);
   useEffect(() => {
     if (instance && state.website !== "practice")
@@ -30,6 +31,10 @@ export default function Statement() {
       className="webviewer"
       style={{ height: "100%", width: "100%" }}
       ref={viewer}
-    ></div>
+    >
+      {state.website === "practice"
+        ? "No statement available in practice mode"
+        : ""}
+    </div>
   );
 }

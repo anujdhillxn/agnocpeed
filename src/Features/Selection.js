@@ -1,4 +1,4 @@
-import { Login, Start } from "@mui/icons-material";
+import { Delete, Login, Start } from "@mui/icons-material";
 import {
   Box,
   FormControl,
@@ -20,12 +20,8 @@ import { PLATFORM_NAMES } from "../utils/constants";
 
 export default function Selection() {
   const { state } = useContext(appContext);
-  const [startMessage, setStartMessage] = useState(
-    "Log in and then choose a contest ID."
-  );
+  const [startMessage, setStartMessage] = useState("Choose a platform.");
   const [contestBox, setContestBox] = useState("");
-  const [username, setUsername] = useState(state.config.defaultUsername);
-  const [password, setPassword] = useState("");
   const [platformBox, setPlatformBox] = useState(0);
   useEffect(() => {
     window.api.getLoginMessage((data) => {
@@ -38,7 +34,11 @@ export default function Selection() {
   };
 
   const login = () => {
-    window.api.login(username, password, PLATFORM_NAMES[platformBox]);
+    window.api.login(PLATFORM_NAMES[platformBox]);
+  };
+
+  const clearCookies = () => {
+    window.api.clearCookies();
   };
 
   return (
@@ -70,31 +70,6 @@ export default function Selection() {
         </Box>
       </div>
       <div className="selection-wrapper">
-        <FormControl variant="outlined" margin="dense">
-          <InputLabel htmlFor="username">Username</InputLabel>
-          <OutlinedInput
-            fullWidth
-            id="username"
-            label="Username"
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-            }}
-          />
-        </FormControl>
-        <FormControl variant="outlined" margin="dense">
-          <InputLabel htmlFor="password">Password</InputLabel>
-          <OutlinedInput
-            fullWidth
-            value={password}
-            label="Password"
-            type="password"
-            id="password"
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
-          />
-        </FormControl>
         <Dropdown
           handleChange={(e) => {
             setPlatformBox(e.target.value);
@@ -105,6 +80,9 @@ export default function Selection() {
           fullWidth={true}
         />
         <Box>
+          {/* <CustomButton title={"Clear cookies"} handleClick={clearCookies}>
+            <Delete />
+          </CustomButton> */}
           <CustomButton title={"Login"} handleClick={login}>
             <Login />
           </CustomButton>

@@ -21,7 +21,7 @@ export default function Settings() {
     <div style={{ margin: "10px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}>
         {Object.keys(state.config).map((key) =>
-          key !== "layout" && key !== "languages" ? (
+          key !== "layout" && key !== "languages" && key !== "cookies" ? (
             <CustomInput
               id={key}
               label={key}

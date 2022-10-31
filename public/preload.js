@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 const puppeteer = require("puppeteer");
 
 const API = {
+  clearCookies: () => ipcRenderer.send("clearCookies"),
   login: (username, password, platform) =>
     ipcRenderer.send("login", username, password, platform),
   start: (id) => ipcRenderer.send("start", id),

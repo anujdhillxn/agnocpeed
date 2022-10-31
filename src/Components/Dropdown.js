@@ -2,10 +2,9 @@ import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 
 export default function Dropdown(props) {
   return (
-    <FormControl fullWidth margin="dense">
+    <FormControl fullWidth margin="normal">
       <InputLabel>{props.label}</InputLabel>
       <Select
-        size="small"
         value={props.value}
         label={props.label}
         onChange={props.handleChange}

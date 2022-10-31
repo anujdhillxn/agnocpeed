@@ -26,7 +26,6 @@ let browser = null,
   mainPage = null,
   submissionPage = null,
   standingsPage = null;
-
 let contestDir = null;
 let filesDir = isDev
   ? path.join(__dirname, "../extraResources/files")
@@ -37,6 +36,7 @@ let settingsDir = isDev
 let configPath = path.join(settingsDir, "config.json");
 let submittedOnce = false;
 let win;
+let standingsStartedUpdating = false;
 
 function setState(key, newVal) {
   if (state[key] === newVal) return;
@@ -84,69 +84,64 @@ async function init() {
   fs.readFile(configPath, "utf8", async function (err, data) {
     if (err) throw err;
     setState("config", JSON.parse(data));
-    browser = await puppeteer.launch({
-      executablePath: getChromiumExecPath(),
-      headless: state.config.headless,
-    });
-    mainPage = await browser.newPage();
-    submissionPage = await browser.newPage();
-    standingsPage = await browser.newPage();
-    getFutureContests();
   });
+  getFutureContests();
 }
 const sendNotif = (type, message) => {
   win.webContents.send("notif", { message: message, danger: type });
 };
 
 const getFutureContests = async () => {
-  if (state.contestId === null) {
-    const futureContests = [];
-    await submissionPage.goto("https://codeforces.com/contests");
-    await submissionPage.waitForSelector(".datatable");
-    let tableContainer = await submissionPage.$(".datatable");
-    let table = await tableContainer.$("tbody");
-    let rows = await table.$$("tr");
-    for (let i = 1; i < rows.length; i++) {
-      const cells = await rows[i].$$("td");
-      const data = [];
-      for (const cell of cells) {
-        const val = await cell.evaluate((val) => val.innerText);
-        data.push(val);
-      }
-      futureContests.push({
-        id: await rows[i].evaluate((row) => row.getAttribute("data-contestid")),
-        name: data[0],
-        startTime: data[2],
-        platform: CODEFORCES,
-      });
+  const contestFetcher = await puppeteer.launch({
+    executablePath: getChromiumExecPath(),
+    headless: true,
+  });
+  const page = await contestFetcher.newPage();
+  const futureContests = [];
+  await page.goto("https://codeforces.com/contests");
+
+  let tableContainer = await page.waitForSelector(".datatable");
+  let table = await tableContainer.$("tbody");
+  let rows = await table.$$("tr");
+  for (let i = 1; i < rows.length; i++) {
+    const cells = await rows[i].$$("td");
+    const data = [];
+    for (const cell of cells) {
+      const val = await cell.evaluate((val) => val.innerText);
+      data.push(val);
     }
+    futureContests.push({
+      id: await rows[i].evaluate((row) => row.getAttribute("data-contestid")),
+      name: data[0],
+      startTime: data[2],
+      platform: CODEFORCES,
+    });
     setState("futureContests", [...futureContests]);
-    await standingsPage.goto("https://atcoder.jp/");
-    tableContainer = await standingsPage.waitForSelector(
-      "#contest-table-upcoming"
-    );
-    table = await tableContainer.$("tbody");
-    rows = await table.$$("tr");
-    for (let i = 0; i < rows.length; i++) {
-      const cells = await rows[i].$$("td");
-      const data = [];
-      for (const cell of cells) {
-        const val = await cell.evaluate((val) => val.innerText);
-        data.push(val);
-      }
-      const link = await cells[1].$("a");
-      futureContests.push({
-        id: await link.evaluate((node) => {
-          const data = node.getAttribute("href").split("/");
-          return data[data.length - 1];
-        }),
-        name: await link.evaluate((node) => node.innerText),
-        startTime: data[0],
-        platform: ATCODER,
-      });
-    }
-    setState("futureContests", futureContests);
   }
+  await page.goto("https://atcoder.jp/");
+  tableContainer = await page.waitForSelector("#contest-table-upcoming");
+  table = await tableContainer.$("tbody");
+  rows = await table.$$("tr");
+  for (let i = 0; i < rows.length; i++) {
+    const cells = await rows[i].$$("td");
+    const data = [];
+    for (const cell of cells) {
+      const val = await cell.evaluate((val) => val.innerText);
+      data.push(val);
+    }
+    const link = await cells[1].$("a");
+    futureContests.push({
+      id: await link.evaluate((node) => {
+        const data = node.getAttribute("href").split("/");
+        return data[data.length - 1];
+      }),
+      name: await link.evaluate((node) => node.innerText),
+      startTime: data[0],
+      platform: ATCODER,
+    });
+    setState("futureContests", [...futureContests]);
+  }
+  await contestFetcher.close();
 };
 
 const clearTestCases = () => {
@@ -179,55 +174,36 @@ const closeWindow = () => {
   }
 };
 
-const login = async (event, username, password, platform) => {
+const clearCookies = () => {};
+
+const login = async (event, platform) => {
+  if (browser) await browser.close();
+  if (platform === PRACTICE) {
+    win.webContents.send("getLoginMessage", "Choose name of practice session.");
+    setState("website", platform);
+    return;
+  }
+  browser = await puppeteer.launch({
+    executablePath: getChromiumExecPath(),
+    headless: false,
+  });
+  [mainPage] = await browser.pages();
   switch (platform) {
     case CODEFORCES:
-      win.webContents.send("getLoginMessage", "Opening Website...");
-      try {
-        await mainPage.goto("https://codeforces.com/enter?back=%2F");
-        await mainPage.waitForSelector("#handleOrEmail");
-      } catch (e) {
-        win.webContents.send("getLoginMessage", "Unable to open website. " + e);
-        return;
-      }
-
-      win.webContents.send("getLoginMessage", "Validating credentials...");
-      try {
-        await mainPage.type("#handleOrEmail", username);
-        await mainPage.type("#password", password);
-        await mainPage.click("input[type=submit]");
-        await mainPage.waitForXPath('//*[contains(text(), "Logout")]');
-        win.webContents.send("getLoginMessage", "Login successful.");
-      } catch (e) {
-        win.webContents.send("getLoginMessage", "Login failed. " + e);
-        return;
-      }
-
+      await mainPage.goto("https://codeforces.com/enter?back=%2F");
+      win.webContents.send(
+        "getLoginMessage",
+        "Enter contest ID after you have logged in. You can choose to not login as well."
+      );
       break;
     case ATCODER:
-      win.webContents.send("getLoginMessage", "Opening Website...");
-      try {
-        (await mainPage).goto(
-          "https://atcoder.jp/login?continue=https%3A%2F%2Fatcoder.jp%2F"
-        );
-        await mainPage.waitForSelector("#username");
-      } catch (e) {
-        win.webContents.send("getLoginMessage", "Unable to open website. " + e);
-        return;
-      }
-
-      win.webContents.send("getLoginMessage", "Validating credentials...");
-      try {
-        await mainPage.type("#username", username);
-        await mainPage.type("#password", password);
-        await mainPage.click("#submit");
-        await mainPage.waitForXPath('//*[contains(text(), "Sign Out")]');
-        win.webContents.send("getLoginMessage", "Login successful.");
-      } catch (e) {
-        win.webContents.send("getLoginMessage", "Login failed. " + e);
-        return;
-      }
-
+      await mainPage.goto(
+        "https://atcoder.jp/login?continue=https%3A%2F%2Fatcoder.jp%2F"
+      );
+      win.webContents.send(
+        "getLoginMessage",
+        "Enter contest ID after you have logged in. You can choose to not login as well."
+      );
       break;
     case CODECHEF:
       win.webContents.send(
@@ -235,12 +211,6 @@ const login = async (event, username, password, platform) => {
         "The support for this platform is not available, yet."
       );
       return;
-    case PRACTICE:
-      win.webContents.send(
-        "getLoginMessage",
-        "Choose name of practice session."
-      );
-      break;
     default:
       win.webContents.send("getLoginMessage", "Invalid platform.");
       return;
@@ -249,14 +219,34 @@ const login = async (event, username, password, platform) => {
 };
 
 const start = async (event, id) => {
-  fs.readFile(configPath, "utf8", function (err, data) {
-    if (err) throw err;
-    setState("config", JSON.parse(data));
-  });
   if (state.website == null) {
     win.webContents.send("getLoginMessage", "Select a platform first!");
     return;
   } else {
+    if (state.website !== PRACTICE) {
+      const cookies = await mainPage.cookies();
+      console.log(cookies);
+      await browser.close();
+      browser = await puppeteer.launch({
+        executablePath: getChromiumExecPath(),
+        headless: state.config.headless,
+      });
+      await browser.newPage();
+      await browser.newPage();
+      [mainPage, submissionPage, standingsPage] = await browser.pages();
+      await mainPage.setCookie(...cookies);
+      await submissionPage.setCookie(...cookies);
+      await standingsPage.setCookie(...cookies);
+      if (!standingsStartedUpdating) {
+        setInterval(() => {
+          updateSubmissions();
+        }, 5000);
+        setInterval(() => {
+          updateStandings();
+        }, 5000);
+        standingsStartedUpdating = true;
+      }
+    }
     contestDir = path.join(filesDir, `${state.website}_${id}`);
     let testcases = path.join(contestDir, "testcases.json");
     if (!fs.existsSync(contestDir)) {
@@ -326,14 +316,6 @@ const start = async (event, id) => {
   }
   setState("contestId", id);
   change(undefined, 0, 0);
-  if (state.website !== PRACTICE) {
-    setInterval(() => {
-      updateSubmissions();
-    }, 5000);
-    setInterval(() => {
-      updateStandings();
-    }, 5000);
-  }
 };
 
 const change = async (event, problemId, langId) => {
@@ -393,7 +375,7 @@ const change = async (event, problemId, langId) => {
           await mainPage.goto(
             `https://atcoder.jp/contests/${state.contestId}/tasks/${state.contestId}_${problemName}`
           );
-          if (!fs.existsSync(statementLoc)) {
+          if (state.config.headless && !fs.existsSync(statementLoc)) {
             await mainPage.pdf({ path: statementLoc });
           }
           let count = 0,
@@ -668,7 +650,7 @@ const deleteLanguage = async (event, idx) => {
 };
 
 const updateSubmissions = async () => {
-  if (state.website && state.contestId && state.currentProblem !== null) {
+  if (state.website && state.contestId && state.problemList) {
     const newSubmissions = [];
     switch (state.website) {
       case CODEFORCES:
@@ -778,6 +760,7 @@ app.on("activate", function () {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
+ipcMain.on("clearCookies", clearCookies);
 ipcMain.on("login", login);
 ipcMain.on("start", start);
 ipcMain.on("change", change);
