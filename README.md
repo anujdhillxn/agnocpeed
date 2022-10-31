@@ -1,5 +1,7 @@
 # AGNOCPEED
 
+Agnocpeed is an OS agnostic desktop app created using Electron + React. User can configure it with their favourite editors, languages and templates. It is designed such that a competitive programmer can fully focus on problem solving and tries to reduce the barriers such as copying testcases, constantly opening standings page, worrying about the verdict of your latest submissions.
+
 ## Build steps
 
 Git, NodeJS and NPM must be installed. Then type the following in a terminal to generate a build for your OS.
@@ -10,6 +12,8 @@ cd agnocpeed
 npm install
 npm run electron:build
 ```
+
+A Build will be generated in the dist folder. The dist folder will contain an installable as well as the installed app.
 
 ## Usage
 
