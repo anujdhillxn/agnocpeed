@@ -378,7 +378,7 @@ const change = async (event, problemId, langId) => {
           await mainPage.goto(
             `https://codeforces.com/contest/${state.contestId}/problem/${problemName}`
           );
-          if (!fs.existsSync(statementLoc)) {
+          if (state.config.headless && !fs.existsSync(statementLoc)) {
             await mainPage.pdf({ path: statementLoc });
           }
 
