@@ -23,6 +23,9 @@ A Build will be generated in the dist folder. The dist folder will contain an in
 - Logging in or not logging in is upto you and some features won't work accordingly.
 - Enter a contest id. Future contest IDs are displayed in the table.
 
+![Before start](./BeforeStart.png)
+![After start](./AfterStart.png)
+
 ### Settings
 
 - Change the editor to the one that you currently have.
