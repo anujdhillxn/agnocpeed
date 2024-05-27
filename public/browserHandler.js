@@ -458,7 +458,9 @@ const getBrowserHandler = () => {
                 );
                 return;
             }
-            stateHandler.setProblem(problemId, testCases);
+            for (const testCase of testCases) {
+                stateHandler.addTestCase(testCase);
+            }
         }
         stateHandler.addToLog(`Solving problem ${problemName} in ${lang.name}`);
         runCommandSync(`${config.editor} ${fileLoc}`);
