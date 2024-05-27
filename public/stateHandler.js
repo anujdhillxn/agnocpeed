@@ -86,14 +86,17 @@ const getStateHandler = () => {
         commHandler.updateUIState(state);
     };
 
-    const addTestCase = () => {
-        state.problemList[state.currentProblem].testCases.push({
-            input: "",
-            output: "",
-            result: "",
-            verdict: "",
-            comments: "",
-        });
+    const addTestCase = (testCaseToAdd) => {
+        const testCase = testCaseToAdd
+            ? testCaseToAdd
+            : {
+                  input: "",
+                  output: "",
+                  result: "",
+                  verdict: "",
+                  comments: "",
+              };
+        state.problemList[state.currentProblem].testCases.push(testCase);
         commHandler.updateUIState(state);
     };
 
@@ -145,16 +148,14 @@ const getStateHandler = () => {
         commHandler.updateUIState(state);
     };
 
-    const setProblem = (idx, testCases) => {
-        state.problemList[idx].testCases = testCases;
-    };
-
     const setCurrentProblem = (problemId) => {
         state.currentProblem = problemId;
+        commHandler.updateUIState(state);
     };
 
     const setCurrentLanguage = (langId) => {
         state.currentLanguage = langId;
+        commHandler.updateUIState(state);
     };
 
     return {
@@ -172,7 +173,6 @@ const getStateHandler = () => {
         changeLangConfig,
         addLang,
         deleteLang,
-        setProblem,
         setCurrentProblem,
         setCurrentLanguage,
     };

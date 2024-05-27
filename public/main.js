@@ -34,6 +34,7 @@ async function init() {
     commHandler.initialize(win);
     stateHandler.initialize(INITIAL_STATE, commHandler);
     browserHandler.initialize(commHandler, stateHandler);
+    osHandler.initialize(commHandler, stateHandler);
     browserHandler.getFutureContests();
 }
 
