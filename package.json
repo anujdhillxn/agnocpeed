@@ -8,7 +8,6 @@
     "@emotion/styled": "^11.10.4",
     "@mui/icons-material": "^5.10.9",
     "@mui/material": "^5.10.10",
-    "@pdftron/webviewer": "^8.9.0",
     "electron-is-dev": "^2.0.0",
     "flexlayout-react": "^0.7.4",
     "puppeteer": "^15.5.0",
