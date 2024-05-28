@@ -17,11 +17,16 @@ const getCommHandler = () => {
         win.webContents.send("getState", state);
     };
 
+    const screencast = (img) => {
+        win.webContents.send("getScreencast", img);
+    };
+
     return {
         initialize,
         setLoginMessage,
         sendNotif,
         updateUIState,
+        screencast,
     };
 };
 

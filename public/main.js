@@ -109,3 +109,7 @@ ipcMain.on("addNewLanguage", (event) => {
 ipcMain.on("deleteLanguage", (event, idx) => {
     stateHandler.deleteLang(idx);
 });
+
+ipcMain.on("screencastInteract", (event, data) => {
+    browserHandler.screencastInteract(data);
+});
