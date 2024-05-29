@@ -9,10 +9,7 @@ const getStateHandler = () => {
 
     const initialize = (initialState, _commHandler) => {
         state = initialState;
-        fs.readFile(configPath, "utf8", async function (err, data) {
-            if (err) throw err;
-            state.config = JSON.parse(data);
-        });
+        state.config = JSON.parse(fs.readFileSync(configPath, "utf8"));
         commHandler = _commHandler;
     };
 
