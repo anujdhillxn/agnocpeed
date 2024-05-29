@@ -122,14 +122,13 @@ const getStateHandler = () => {
 
     const addLang = () => {
         state.config.languages.push({
-            name: "Display name",
+            name: "C++",
             extension: "",
-            template: "Should be placed in extraResources/settings",
-            compiled: 0,
-            compiler: "",
-            interpreter: "",
-            compileOptions: "",
-            runOptions: "",
+            template:
+                "https://raw.githubusercontent.com/anujdhillxn/CompetitiveProgramming_Boilerplate/master/template.cpp",
+            compileCommand:
+                "g++ {contestDir}\\{problemId}.cpp -o {contestDir}\\{problemId}.exe",
+            runCommand: "{contestDir}\\{problemId}.exe",
             idAtcoder:
                 "Inspect the select tag on dropdown while submitting on atcoder and find out the one needed",
             idCodeforces:
