@@ -7,7 +7,6 @@ const {
     ATCODER,
     CODECHEF,
     filesDir,
-    settingsDir,
 } = require("./constants");
 const { getChromiumExecPath, runCommandSync } = require("./functions");
 
@@ -378,7 +377,7 @@ const getBrowserHandler = () => {
         let fileLoc = path.join(contestDir, `${problemName}.${lang.extension}`);
         if (!fs.existsSync(fileLoc)) {
             fs.readFile(
-                `${path.join(settingsDir, lang.template)}`,
+                lang.template,
                 { encoding: "utf-8" },
                 function (err, data) {
                     if (!err) {

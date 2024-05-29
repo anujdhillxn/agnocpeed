@@ -3,7 +3,12 @@ const path = require("path");
 const fs = require("fs");
 const isDev = require("electron-is-dev");
 const { runCommandSync } = require("./functions");
-const { filesDir, INITIAL_STATE } = require("./constants");
+const {
+    filesDir,
+    INITIAL_STATE,
+    configPath,
+    defaultConfigPath,
+} = require("./constants");
 const { getStateHandler } = require("./stateHandler");
 const { getCommHandler } = require("./commHandler");
 const { getOsHandler } = require("./osHandler");
@@ -31,6 +36,12 @@ async function init() {
             : `file://${path.join(__dirname, "./index.html")}`
     );
     if (!fs.existsSync(filesDir)) runCommandSync(`mkdir ${filesDir}`);
+    if (!fs.existsSync(configPath)) {
+        const defaultConfig = fs.readFileSync(defaultConfigPath, {
+            encoding: "utf-8",
+        });
+        fs.writeFileSync(configPath, defaultConfig);
+    }
     commHandler.initialize(win);
     stateHandler.initialize(INITIAL_STATE, commHandler);
     browserHandler.initialize(commHandler, stateHandler);

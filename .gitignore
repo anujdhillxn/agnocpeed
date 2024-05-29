@@ -14,6 +14,7 @@
 /build
 /dist
 /extraResources/files
+/extraResources/settings/config.json
 
 # misc
 .DS_Store
