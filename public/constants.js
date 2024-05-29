@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const isDev = require("electron-is-dev");
 console.log(isDev, __dirname);
 const filesDir = isDev
@@ -8,7 +9,7 @@ const settingsDir = isDev
     ? path.join(__dirname, "../extraResources/settings")
     : path.join(process.resourcesPath, "extraResources/settings");
 const configPath = path.join(settingsDir, "config.json");
-
+const defaultConfigPath = path.join(settingsDir, "defaultConfig.json");
 module.exports = {
     ATCODER: "atcoder",
     CODEFORCES: "codeforces",
@@ -30,4 +31,5 @@ module.exports = {
     filesDir,
     settingsDir,
     configPath,
+    defaultConfigPath,
 };
