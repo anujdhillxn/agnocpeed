@@ -19,67 +19,68 @@ import Settings from "./Features/Settings";
 export const appContext = React.createContext(null);
 
 export default function App() {
-  const [state, setState] = useState(INITIAL_STATE);
-  const [model, setModel] = useState(null);
+    const [state, setState] = useState(INITIAL_STATE);
+    const [model, setModel] = useState(null);
 
-  useEffect(() => {
-    window.api.getState((data) => {
-      setState(data);
-      if (data.config.layout)
-        setModel(FlexLayout.Model.fromJson(data.config.layout));
-    });
-    window.api.notif((data) => {
-      Store.addNotification({
-        ...notification,
-        title: data.message,
-        message: data.message,
-        type: data.danger ? "danger" : "success",
-      });
-    });
-  }, []);
+    useEffect(() => {
+        window.api.getState((data) => {
+            setState(data);
+            if (data.config.layout)
+                setModel(FlexLayout.Model.fromJson(data.config.layout));
+        });
+        window.api.notif((data) => {
+            Store.addNotification({
+                ...notification,
+                title: data.message,
+                message: data.message,
+                type: data.danger ? "danger" : "success",
+            });
+        });
+    }, []);
 
-  const factory = (node) => {
-    const name = node.getName();
-    if (name === "Standings") return <Standings />;
-    else if (name === "Actions") return <Actions model={model} />;
-    else if (name === "Log") return <Log />;
-    else if (name === "Submissions") return <Submissions />;
-    else if (name === "Statement") return <Statement />;
-    else if (name === "Settings") return <Settings />;
-    else return <TestCases />;
-  };
+    const factory = (node) => {
+        const name = node.getName();
+        if (name === "Standings") return <Standings />;
+        else if (name === "Actions") return <Actions model={model} />;
+        else if (name === "Log") return <Log />;
+        else if (name === "Submissions") return <Submissions />;
+        else if (name === "Statement") return <Statement />;
+        else if (name === "Settings") return <Settings />;
+        else return <TestCases />;
+    };
 
-  useEffect(() => {
-    console.log(state);
-  }, [state]);
-  return (
-    <appContext.Provider value={{ state: state }}>
-      <ThemeProvider theme={THEME}>
-        {state.config === null ? (
-          <Box>Loading config...</Box>
-        ) : (
-          <div className="App">
-            <ReactNotifications />
-            {state.contestId == null ||
-            state.website == null ||
-            !state.problemList ||
-            state.currentProblem === null ? (
-              <Selection />
-            ) : (
-              <FlexLayout.Layout
-                onModelChange={() => {
-                  let modelJson = model.toJson();
-                  serialize(modelJson);
-                  window.api.saveLayout(modelJson);
-                }}
-                font={{ family: "'Montserrat', sans-serif" }}
-                model={model}
-                factory={factory}
-              />
-            )}
-          </div>
-        )}
-      </ThemeProvider>
-    </appContext.Provider>
-  );
+    useEffect(() => {
+        console.log(state);
+    }, [state]);
+    return (
+        <appContext.Provider value={{ state: state }}>
+            <ThemeProvider theme={THEME}>
+                {state.config === null ? (
+                    <Box>Loading config...</Box>
+                ) : (
+                    <div className="App">
+                        <ReactNotifications />
+                        {state.contestId == null ||
+                        state.website == null ||
+                        !state.problemList ||
+                        state.currentProblem === null ? (
+                            <Selection />
+                        ) : (
+                            <FlexLayout.Layout
+                                onModelChange={() => {
+                                    let modelJson = model.toJson();
+                                    serialize(modelJson);
+                                    console.log(modelJson);
+                                    window.api.saveLayout(modelJson);
+                                }}
+                                font={{ family: "'Montserrat', sans-serif" }}
+                                model={model}
+                                factory={factory}
+                            />
+                        )}
+                    </div>
+                )}
+            </ThemeProvider>
+        </appContext.Provider>
+    );
 }
