@@ -20,6 +20,8 @@ export const appContext = React.createContext(null);
 
 export default function App() {
     const [state, setState] = useState(INITIAL_STATE);
+    const [currentProblem, setCurrentProblem] = useState(0);
+    const [currentLanguage, setCurrentLanguage] = useState(0);
     const [model, setModel] = useState(null);
 
     useEffect(() => {
@@ -53,7 +55,15 @@ export default function App() {
         console.log(state);
     }, [state]);
     return (
-        <appContext.Provider value={{ state: state }}>
+        <appContext.Provider
+            value={{
+                state,
+                currentProblem,
+                setCurrentProblem,
+                currentLanguage,
+                setCurrentLanguage,
+            }}
+        >
             <ThemeProvider theme={THEME}>
                 {state.config === null ? (
                     <Box>Loading config...</Box>
@@ -62,8 +72,7 @@ export default function App() {
                         <ReactNotifications />
                         {state.contestId == null ||
                         state.website == null ||
-                        !state.problemList ||
-                        state.currentProblem === null ? (
+                        !state.problemList ? (
                             <Selection />
                         ) : (
                             <FlexLayout.Layout

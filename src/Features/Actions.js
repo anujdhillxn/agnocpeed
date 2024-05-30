@@ -12,22 +12,28 @@ import CustomButton from "../Components/CustomButton";
 import Dropdown from "../Components/Dropdown";
 
 export default function Actions({ model }) {
-    const { state } = useContext(appContext);
+    const {
+        state,
+        currentProblem,
+        setCurrentProblem,
+        currentLanguage,
+        setCurrentLanguage,
+    } = useContext(appContext);
 
     const reset = () => {
-        window.api.reset();
+        window.api.reset(currentProblem, currentLanguage);
     };
 
     const compile = () => {
-        window.api.compile();
+        window.api.compile(currentProblem, currentLanguage);
     };
 
     const run = () => {
-        window.api.run();
+        window.api.run(currentProblem, currentLanguage);
     };
 
     const submit = () => {
-        window.api.submit();
+        window.api.submit(currentProblem, currentLanguage);
     };
     useKeyboardShortcut(state.config.resetHotKeys.split("+"), reset, {
         repeatOnHold: false,
@@ -73,21 +79,20 @@ export default function Actions({ model }) {
             <Container>
                 <Dropdown
                     handleChange={(e) => {
-                        window.api.change(
-                            e.target.value,
-                            state.currentLanguage
-                        );
+                        setCurrentProblem(e.target.value);
+                        window.api.change(e.target.value, currentLanguage);
                     }}
-                    value={state.currentProblem}
+                    value={currentProblem}
                     label={"Currently solving"}
                     items={state.problemList.map((problem) => problem.id)}
                     fullwidth={true}
                 />
                 <Dropdown
                     handleChange={(e) => {
-                        window.api.change(state.currentProblem, e.target.value);
+                        setCurrentLanguage(e.target.value);
+                        window.api.change(currentProblem, e.target.value);
                     }}
-                    value={state.currentLanguage}
+                    value={currentLanguage}
                     label={"Language"}
                     items={state.config.languages.map((lang) => lang.name)}
                     fullwidth={true}

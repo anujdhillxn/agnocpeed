@@ -9,15 +9,14 @@ import { CheckCircleRounded, Clear } from "@mui/icons-material";
 import useKeyboardShortcut from "use-keyboard-shortcut";
 import CustomInput from "../Components/CustomInput";
 export default function TestCases() {
-    const { state } = useContext(appContext);
+    const { state, currentProblem } = useContext(appContext);
     const [currentTestCase, setCurrentTestCase] = useState(0);
 
     useKeyboardShortcut(
         ["Shift", "ArrowRight"],
         () =>
             setCurrentTestCase((val) =>
-                val + 1 <
-                state.problemList[state.currentProblem].testCases.length
+                val + 1 < state.problemList[currentProblem].testCases.length
                     ? val + 1
                     : val
             ),
@@ -33,8 +32,8 @@ export default function TestCases() {
     // useKeyboardShortcut(
     //   ["Shift", "ArrowDown"],
     //   () => {
-    //     state.currentProblem + 1 < state.problemList.length &&
-    //       window.api.change(state.currentProblem + 1, state.currentLanguage);
+    //     currentProblem + 1 < state.problemList.length &&
+    //       window.api.change(currentProblem + 1, state.currentLanguage);
     //   },
     //   { repeatOnHold: false }
     // );
@@ -42,8 +41,8 @@ export default function TestCases() {
     // useKeyboardShortcut(
     //   ["Shift", "ArrowUp"],
     //   () => {
-    //     state.currentProblem - 1 >= 0 &&
-    //       window.api.change(state.currentProblem - 1, state.currentLanguage);
+    //     currentProblem - 1 >= 0 &&
+    //       window.api.change(currentProblem - 1, state.currentLanguage);
     //   },
     //   { repeatOnHold: false }
     // );
@@ -54,24 +53,21 @@ export default function TestCases() {
                 <CustomButton
                     title={"Add New Test Case"}
                     handleClick={() => {
-                        window.api.addNewTestCase();
+                        window.api.addNewTestCase(currentProblem);
                     }}
                 >
                     <AddIcon />
                 </CustomButton>
                 <span>
                     Passed -{" "}
-                    {countPassed(
-                        state.problemList[state.currentProblem].testCases
-                    )}{" "}
-                    /{state.problemList[state.currentProblem].testCases.length}
+                    {countPassed(state.problemList[currentProblem].testCases)} /
+                    {state.problemList[currentProblem].testCases.length}
                 </span>
-                {countPassed(
-                    state.problemList[state.currentProblem].testCases
-                ) ===
-                    state.problemList[state.currentProblem].testCases.length &&
-                    state.problemList[state.currentProblem].testCases.length >
-                        0 && <CheckCircleRounded color="success" />}
+                {countPassed(state.problemList[currentProblem].testCases) ===
+                    state.problemList[currentProblem].testCases.length &&
+                    state.problemList[currentProblem].testCases.length > 0 && (
+                        <CheckCircleRounded color="success" />
+                    )}
             </Box>
             <div>
                 <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -81,7 +77,7 @@ export default function TestCases() {
                             setCurrentTestCase(newValue);
                         }}
                     >
-                        {state.problemList[state.currentProblem].testCases.map(
+                        {state.problemList[currentProblem].testCases.map(
                             (item, idx) => (
                                 <Tab
                                     sx={{
@@ -104,7 +100,7 @@ export default function TestCases() {
                                                     event.stopPropagation();
                                                     if (
                                                         state.problemList[
-                                                            state.currentProblem
+                                                            currentProblem
                                                         ].testCases.length >
                                                             1 &&
                                                         currentTestCase ===
@@ -118,6 +114,7 @@ export default function TestCases() {
                                                             (val) => val - 1
                                                         );
                                                     window.api.deleteTestCase(
+                                                        currentProblem,
                                                         idx
                                                     );
                                                 }}
@@ -131,8 +128,7 @@ export default function TestCases() {
                         )}
                     </Tabs>
                 </Box>
-                {state.problemList[state.currentProblem].testCases.length >
-                    0 && (
+                {state.problemList[currentProblem].testCases.length > 0 && (
                     <div>
                         <div className="test-case" style={{ display: "flex" }}>
                             <CustomInput
@@ -140,11 +136,13 @@ export default function TestCases() {
                                 id="input"
                                 label={"Input"}
                                 value={
-                                    state.problemList[state.currentProblem]
-                                        .testCases[currentTestCase].input
+                                    state.problemList[currentProblem].testCases[
+                                        currentTestCase
+                                    ].input
                                 }
                                 handleChange={(e) => {
                                     window.api.changeTestCases(
+                                        currentProblem,
                                         currentTestCase,
                                         "input",
                                         e.target.value
@@ -156,11 +154,13 @@ export default function TestCases() {
                                 id="output"
                                 label={"Expected output"}
                                 value={
-                                    state.problemList[state.currentProblem]
-                                        .testCases[currentTestCase].output
+                                    state.problemList[currentProblem].testCases[
+                                        currentTestCase
+                                    ].output
                                 }
                                 handleChange={(e) => {
                                     window.api.changeTestCases(
+                                        currentProblem,
                                         currentTestCase,
                                         "output",
                                         e.target.value
@@ -172,8 +172,9 @@ export default function TestCases() {
                                 id="result"
                                 label={"Your output"}
                                 value={
-                                    state.problemList[state.currentProblem]
-                                        .testCases[currentTestCase].result
+                                    state.problemList[currentProblem].testCases[
+                                        currentTestCase
+                                    ].result
                                 }
                                 disabled={true}
                             />
@@ -181,8 +182,9 @@ export default function TestCases() {
                         <div className="comments">
                             <p>
                                 {
-                                    state.problemList[state.currentProblem]
-                                        .testCases[currentTestCase].comments
+                                    state.problemList[currentProblem].testCases[
+                                        currentTestCase
+                                    ].comments
                                 }
                             </p>
                         </div>

@@ -11,6 +11,7 @@ const getStateHandler = () => {
         state = initialState;
         state.config = JSON.parse(fs.readFileSync(configPath, "utf8"));
         commHandler = _commHandler;
+        commHandler.updateUIState(state);
     };
 
     const get = () => state;
@@ -26,15 +27,15 @@ const getStateHandler = () => {
         commHandler.updateUIState(state);
     };
 
-    const clearTestCases = () => {
+    const clearTestCases = (problemIdx) => {
         for (
             let i = 0;
-            i < state.problemList[state.currentProblem].testCases.length;
+            i < state.problemList[problemIdx].testCases.length;
             i++
         ) {
-            state.problemList[state.currentProblem].testCases[i].result = "";
-            state.problemList[state.currentProblem].testCases[i].verdict = "";
-            state.problemList[state.currentProblem].testCases[i].comments = "";
+            state.problemList[problemIdx].testCases[i].result = "";
+            state.problemList[problemIdx].testCases[i].verdict = "";
+            state.problemList[problemIdx].testCases[i].comments = "";
         }
         commHandler.updateUIState(state);
     };
@@ -78,12 +79,12 @@ const getStateHandler = () => {
         commHandler.updateUIState(state);
     };
 
-    const changeTestCases = (idx, box, text) => {
-        state.problemList[state.currentProblem].testCases[idx][box] = text;
+    const changeTestCases = (problemIdx, idx, box, text) => {
+        state.problemList[problemIdx].testCases[idx][box] = text;
         commHandler.updateUIState(state);
     };
 
-    const addTestCase = (testCaseToAdd) => {
+    const addTestCase = (problemIdx, testCaseToAdd) => {
         const testCase = testCaseToAdd
             ? testCaseToAdd
             : {
@@ -93,14 +94,14 @@ const getStateHandler = () => {
                   verdict: "",
                   comments: "",
               };
-        state.problemList[state.currentProblem].testCases.push(testCase);
+        state.problemList[problemIdx].testCases.push(testCase);
         commHandler.updateUIState(state);
     };
 
-    const deleteTestCase = (idx) => {
-        state.problemList[state.currentProblem].testCases = [
-            ...state.problemList[state.currentProblem].testCases.slice(0, idx),
-            ...state.problemList[state.currentProblem].testCases.slice(idx + 1),
+    const deleteTestCase = (problemIdx, idx) => {
+        state.problemList[problemIdx].testCases = [
+            ...state.problemList[problemIdx].testCases.slice(0, idx),
+            ...state.problemList[problemIdx].testCases.slice(idx + 1),
         ];
         commHandler.updateUIState(state);
     };
@@ -144,16 +145,6 @@ const getStateHandler = () => {
         commHandler.updateUIState(state);
     };
 
-    const setCurrentProblem = (problemId) => {
-        state.currentProblem = problemId;
-        commHandler.updateUIState(state);
-    };
-
-    const setCurrentLanguage = (langId) => {
-        state.currentLanguage = langId;
-        commHandler.updateUIState(state);
-    };
-
     return {
         initialize,
         get,
@@ -169,8 +160,6 @@ const getStateHandler = () => {
         changeLangConfig,
         addLang,
         deleteLang,
-        setCurrentProblem,
-        setCurrentLanguage,
     };
 };
 
