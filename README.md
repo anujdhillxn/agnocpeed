@@ -1,6 +1,6 @@
 # AGNOCPEED
 
-Agnocpeed is an OS agnostic desktop app created using Electron + React. User can configure it with their favourite editors, languages (Currently supports C++ and Python) and templates. It is designed such that a competitive programmer can fully focus on problem solving and tries to reduce the barriers such as copying testcases, constantly opening standings page, worrying about the verdict of your latest submissions.
+Agnocpeed is an OS agnostic desktop app created using Electron + React. User can configure it with their favourite editors, languages and templates. It is designed such that a competitive programmer can fully focus on problem solving and tries to reduce the barriers such as copying testcases, constantly opening standings page, worrying about the verdict of your latest submissions.
 
 ## Build steps
 
@@ -9,7 +9,7 @@ Git, NodeJS and NPM must be installed. Then type the following in a terminal to 
 ```
 git clone https://github.com/anujdhillxn/agnocpeed.git
 cd agnocpeed
-npm install
+npm ci
 npm run electron:build
 ```
 
@@ -29,9 +29,8 @@ A Build will be generated in the dist folder. The dist folder will contain an in
 ### Settings
 
 - Change the editor to the one that you currently have.
-- Make sure you have a template present for all the languages in the resources/extraResources/settings directory.
+- C++ language added by default. Set your template file path in the config. You can add other languages and configure them accordingly.
 - Make sure your system can support the run and compile commands that are mentioned.
-- Switch the headless property and you will understand what it means :P.
 
 ### Actions
 
@@ -39,7 +38,7 @@ A Build will be generated in the dist folder. The dist folder will contain an in
 
 ### Statement
 
-- Only available in headless mode.
+- A screencast for viewing the problem statement. 
 
 ### Test Cases
 
