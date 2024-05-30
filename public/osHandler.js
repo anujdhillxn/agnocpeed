@@ -41,18 +41,11 @@ const getOsHandler = () => {
         //TODO: Handle run Command properly.
     };
 
-    const compile = () => {
-        const {
-            problemList,
-            config,
-            website,
-            contestId,
-            currentProblem,
-            currentLanguage,
-        } = stateHandler.get();
+    const compile = (problemIdx, languageIdx) => {
+        const { problemList, config, website, contestId } = stateHandler.get();
         const contestDir = path.join(filesDir, `${website}_${contestId}`);
-        const problemId = problemList[currentProblem].id;
-        const lang = config.languages[currentLanguage];
+        const problemId = problemList[problemIdx].id;
+        const lang = config.languages[languageIdx];
         const command = lang.compileCommand
             .replace(/{problemId}/g, problemId)
             .replace(/{contestDir}/g, contestDir);
@@ -74,35 +67,28 @@ const getOsHandler = () => {
         );
     };
 
-    const run = () => {
-        const {
-            problemList,
-            config,
-            contestId,
-            website,
-            currentLanguage,
-            currentProblem,
-        } = stateHandler.get();
-        const problemId = problemList[currentProblem].id;
-        const lang = config.languages[currentLanguage];
+    const run = (problemIdx, languageIdx) => {
+        const { problemList, config, contestId, website } = stateHandler.get();
+        const problemId = problemList[problemIdx].id;
+        const lang = config.languages[languageIdx];
         const contestDir = path.join(filesDir, `${website}_${contestId}`);
         const command = lang.runCommand
             .replace(/{problemId}/g, problemId)
             .replace(/{contestDir}/g, contestDir);
-        stateHandler.clearTestCases();
+        stateHandler.clearTestCases(problemIdx);
 
-        for (let i = 0; i < problemList[currentProblem].testCases.length; i++) {
+        for (let i = 0; i < problemList[problemIdx].testCases.length; i++) {
             // eslint-disable-next-line no-loop-func
             const errHandler = (err) => {
                 let newProblemList = [...problemList];
-                newProblemList[currentProblem].testCases[i].comments += err;
+                newProblemList[problemIdx].testCases[i].comments += err;
                 stateHandler.set("problemList", newProblemList);
             };
 
             // eslint-disable-next-line no-loop-func
             const outHandler = (out) => {
                 let newProblemList = [...problemList];
-                newProblemList[currentProblem].testCases[i].result += out;
+                newProblemList[problemIdx].testCases[i].result += out;
                 stateHandler.set("problemList", newProblemList);
             };
 
@@ -110,20 +96,19 @@ const getOsHandler = () => {
             const close = (code, signal) => {
                 let newProblemList = [...problemList];
                 if (signal !== null) {
-                    newProblemList[currentProblem].testCases[i].verdict = "TLE";
-                    newProblemList[currentProblem].testCases[i].comments =
+                    newProblemList[problemIdx].testCases[i].verdict = "TLE";
+                    newProblemList[problemIdx].testCases[i].comments =
                         "Time Limit Exceeded.";
                 } else {
-                    newProblemList[currentProblem].testCases[i].verdict =
-                        areEqual(
-                            newProblemList[currentProblem].testCases[i].output,
-                            newProblemList[currentProblem].testCases[i].result
-                        );
+                    newProblemList[problemIdx].testCases[i].verdict = areEqual(
+                        newProblemList[problemIdx].testCases[i].output,
+                        newProblemList[problemIdx].testCases[i].result
+                    );
                 }
                 stateHandler.set("problemList", newProblemList);
             };
 
-            const testCase = problemList[currentProblem].testCases[i].input;
+            const testCase = problemList[problemIdx].testCases[i].input;
             runCommand(
                 command,
                 testCase,
@@ -135,17 +120,10 @@ const getOsHandler = () => {
         }
     };
 
-    const reset = () => {
-        const {
-            problemList,
-            config,
-            website,
-            contestId,
-            currentLanguage,
-            currentProblem,
-        } = stateHandler.get();
-        const problemId = problemList[currentProblem].id;
-        const lang = config.languages[currentLanguage];
+    const reset = (problemIdx, languageIdx) => {
+        const { problemList, config, website, contestId } = stateHandler.get();
+        const problemId = problemList[problemIdx].id;
+        const lang = config.languages[languageIdx];
         const contestDir = path.join(filesDir, `${website}_${contestId}`);
         let fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
         fs.readFile(lang.template, { encoding: "utf-8" }, function (err, data) {

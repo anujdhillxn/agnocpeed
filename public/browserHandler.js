@@ -16,10 +16,12 @@ const getBrowserHandler = () => {
     let standingsStartedUpdating = false;
     let commHandler;
     let stateHandler;
+    let jobsHandler;
 
-    const initialize = (_commHandler, _stateHandler) => {
+    const initialize = (_commHandler, _stateHandler, _jobsHandler) => {
         commHandler = _commHandler;
         stateHandler = _stateHandler;
+        jobsHandler = _jobsHandler;
     };
 
     const login = async (platform) => {
@@ -69,7 +71,6 @@ const getBrowserHandler = () => {
         }
         if (website !== PRACTICE) {
             const cookies = await page.cookies();
-            await loginBrowser.close();
             contestBrowser = await puppeteer.launch({
                 executablePath: getChromiumExecPath(),
                 headless: true,
@@ -79,13 +80,8 @@ const getBrowserHandler = () => {
                 },
             });
             await contestBrowser.newPage();
-            await contestBrowser.newPage();
-            await contestBrowser.newPage();
-            const [mainPage, submissionPage, standingsPage, screencastPage] =
-                await contestBrowser.pages();
-            await mainPage.setCookie(...cookies);
-            await submissionPage.setCookie(...cookies);
-            await standingsPage.setCookie(...cookies);
+            const [workerPage, screencastPage] = await contestBrowser.pages();
+            await workerPage.setCookie(...cookies);
             await screencastPage.setCookie(...cookies);
             installMouseHelper();
             const client = await screencastPage.target().createCDPSession();
@@ -104,10 +100,18 @@ const getBrowserHandler = () => {
 
             if (!standingsStartedUpdating) {
                 setInterval(() => {
-                    updateSubmissions();
+                    jobsHandler.addSecondaryJob(
+                        { type: "updateSubmissions" },
+                        updateSubmissions,
+                        true
+                    );
                 }, 5000);
                 setInterval(() => {
-                    updateStandings();
+                    jobsHandler.addSecondaryJob(
+                        { type: "updateStandings" },
+                        updateStandings,
+                        true
+                    );
                 }, 5000);
                 standingsStartedUpdating = true;
             }
@@ -125,11 +129,13 @@ const getBrowserHandler = () => {
         let newProblemList = [];
         commHandler.setLoginMessage("Collecting tasks...");
         try {
-            const [mainPage, ,] = await contestBrowser.pages();
+            const [workerPage] = await contestBrowser.pages();
             switch (website) {
                 case CODEFORCES:
-                    await mainPage.goto(`https://codeforces.com/contest/${id}`);
-                    var items = await mainPage.$$(".id");
+                    await workerPage.goto(
+                        `https://codeforces.com/contest/${id}`
+                    );
+                    var items = await workerPage.$$(".id");
                     for (let i = 0; i < items.length; i++) {
                         let linkText = await items[i].$("a");
                         let problemId = await linkText.evaluate(
@@ -142,11 +148,11 @@ const getBrowserHandler = () => {
                     }
                     break;
                 case ATCODER:
-                    await mainPage.goto(
+                    await workerPage.goto(
                         `https://atcoder.jp/contests/${id}/tasks`
                     );
-                    await mainPage.waitForSelector("tbody");
-                    const nodeChildren = await mainPage.$eval(
+                    await workerPage.waitForSelector("tbody");
+                    const nodeChildren = await workerPage.$eval(
                         "tbody",
                         (uiElement) => {
                             return uiElement.children;
@@ -182,6 +188,7 @@ const getBrowserHandler = () => {
                     commHandler.setLoginMessage("Invalid platform!");
                     return;
             }
+            await loginBrowser.close();
         } catch (e) {
             commHandler.setLoginMessage("Error. Try again. " + e);
             return;
@@ -189,22 +196,24 @@ const getBrowserHandler = () => {
 
         stateHandler.set("problemList", newProblemList);
         stateHandler.set("contestId", id);
+        for (
+            let problemIdx = 0;
+            problemIdx < newProblemList.length;
+            problemIdx++
+        ) {
+            jobsHandler.addPrimaryJob({ type: "parse", problemIdx }, () =>
+                parse(problemIdx)
+            );
+        }
         change(0, 0);
     };
 
-    const submit = async () => {
-        const {
-            problemList,
-            currentLanguage,
-            currentProblem,
-            website,
-            config,
-            contestId,
-        } = stateHandler.get();
-        const problemId = problemList[currentProblem].id;
-        const lang = config.languages[currentLanguage];
+    const submit = async (problemIdx, languageIdx) => {
+        const { problemList, website, config, contestId } = stateHandler.get();
+        const problemId = problemList[problemIdx].id;
+        const lang = config.languages[languageIdx];
         const contestDir = path.join(filesDir, `${website}_${contestId}`);
-        const [mainPage, ,] = await contestBrowser.pages();
+        const [mainPage] = await contestBrowser.pages();
         let fileLoc = path.join(contestDir, `${problemId}.${lang.extension}`);
         switch (website) {
             case CODEFORCES:
@@ -225,7 +234,7 @@ const getBrowserHandler = () => {
                     `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemId}`
                 );
                 await mainPage.select(
-                    'select[name="data.LanguageId"',
+                    'select[name="data.LanguageId"]',
                     lang.idAtcoder
                 );
                 const [fileChooser] = await Promise.all([
@@ -242,166 +251,16 @@ const getBrowserHandler = () => {
         }
     };
 
-    const updateSubmissions = async () => {
-        const { website, contestId, problemList } = stateHandler.get();
-        const [, submissionPage] = await contestBrowser.pages();
-        if (website && contestId && problemList) {
-            const newSubmissions = [];
-            switch (website) {
-                case CODEFORCES:
-                    await submissionPage.goto(
-                        `https://codeforces.com/contest/${contestId}/my`
-                    );
-                    const submissionTables = await submissionPage.$$(
-                        ".status-frame-datatable"
-                    );
-                    for (const table of submissionTables) {
-                        const rows = await table.$$("tr");
-                        for (let i = 1; i < rows.length; i++) {
-                            const cells = await rows[i].$$("td");
-                            const data = [];
-                            for (const cell of cells) {
-                                const val = await cell.evaluate(
-                                    (val) => val.innerText
-                                );
-                                data.push(val);
-                            }
-                            newSubmissions.push({
-                                problemId: data[3],
-                                time: data[1],
-                                verdict: data[5],
-                            });
-                        }
-                    }
-                    break;
-                case ATCODER:
-                    await submissionPage.goto(
-                        `https://atcoder.jp/contests/${contestId}/submissions/me`
-                    );
-                    const table = await submissionPage.$("tbody");
-                    const rows = await table.$$("tr");
-                    for (let i = 0; i < rows.length; i++) {
-                        const cells = await rows[i].$$("td");
-                        const data = [];
-                        for (const cell of cells) {
-                            const val = await cell.evaluate(
-                                (val) => val.innerText
-                            );
-                            data.push(val);
-                        }
-                        newSubmissions.push({
-                            problemId: data[1],
-                            time: data[0],
-                            verdict: data[6],
-                        });
-                    }
-                    break;
-                default:
-                    break;
-            }
-            stateHandler.set("submissions", newSubmissions);
-        }
-    };
-
-    const updateStandings = async () => {
-        const { website, contestId, problemList } = stateHandler.get();
-        const [, , standingsPage] = await contestBrowser.pages();
-        if (website && contestId && problemList) {
-            let newStandings = {};
-            newStandings.solve = {};
-            switch (website) {
-                case CODEFORCES:
-                    await standingsPage.goto(
-                        `https://codeforces.com/contest/${contestId}/standings/friends/true`
-                    );
-                    await standingsPage.waitForSelector(
-                        `.standingsStatisticsRow`
-                    );
-                    const solveRow = await standingsPage.$(
-                        ".standingsStatisticsRow"
-                    );
-                    const counts = await solveRow.$$("td");
-                    for (let i = 0; i < problemList.length; i++) {
-                        newStandings.solve[problemList[i].id] = await counts[
-                            i + 4
-                        ].evaluate((val) => val.innerText);
-                    }
-                    try {
-                        const myRow = await standingsPage.$(".highlighted-row");
-                        const myRank = await myRow.$$("td");
-                        newStandings.rank = await myRank[0].evaluate(
-                            (val) => val.innerText
-                        );
-                    } catch (e) {
-                        newStandings.rank = "Cannot find you";
-                    }
-                    break;
-                case ATCODER:
-                    await standingsPage.goto(
-                        `https://atcoder.jp/contests/${contestId}/standings`
-                    );
-                    await standingsPage.waitForSelector("#standings-tbody");
-                    const table = await standingsPage.$("#standings-tbody");
-                    const solves = await table.$(".standings-statistics");
-                    const cells = await solves.$$("td");
-                    for (let i = 1; i < cells.length; i++) {
-                        newStandings.solve[problemList[i - 1].id] = await cells[
-                            i
-                        ].evaluate((val) => val.innerText);
-                    }
-                    try {
-                        const me = await table.$(".info");
-                        const rank = await me.$$("td");
-                        newStandings.rank = await rank[0].evaluate(
-                            (val) => val.innerText
-                        );
-                    } catch (e) {
-                        newStandings.rank = "Cannot find you";
-                    }
-                    break;
-                default:
-                    break;
-            }
-            stateHandler.set("standings", newStandings);
-        }
-    };
-
-    const change = async (problemId, langId) => {
-        const { problemList, config, contestId, website } = stateHandler.get();
+    const parse = async (problemId) => {
+        const { problemList, contestId, website } = stateHandler.get();
         const problemName = problemList[problemId].id;
-        const lang = config.languages[langId];
-        stateHandler.setCurrentProblem(problemId);
-        stateHandler.setCurrentLanguage(langId);
-        const contestDir = path.join(filesDir, `${website}_${contestId}`);
-        const [mainPage, , , screencastPage] = await contestBrowser.pages();
-        let fileLoc = path.join(contestDir, `${problemName}.${lang.extension}`);
-        if (!fs.existsSync(fileLoc)) {
-            fs.readFile(
-                lang.template,
-                { encoding: "utf-8" },
-                function (err, data) {
-                    if (!err) {
-                        fs.writeFile(`${fileLoc}`, data, function (err) {
-                            if (err) {
-                                return console.log(err);
-                            }
-                        });
-                    } else {
-                        console.log(err);
-                    }
-                }
-            );
-        }
-
+        const [mainPage] = await contestBrowser.pages();
         if (problemList[problemId].testCases.length === 0) {
             let testCases = [];
             try {
                 switch (website) {
                     case CODEFORCES:
                         await mainPage.goto(
-                            `https://codeforces.com/contest/${contestId}/problem/${problemName}`
-                        );
-                        screencastPage.goto(
                             `https://codeforces.com/contest/${contestId}/problem/${problemName}`
                         );
 
@@ -428,9 +287,6 @@ const getBrowserHandler = () => {
 
                     case ATCODER:
                         await mainPage.goto(
-                            `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`
-                        );
-                        screencastPage.goto(
                             `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`
                         );
                         let count = 0,
@@ -477,9 +333,163 @@ const getBrowserHandler = () => {
                 return;
             }
             for (const testCase of testCases) {
-                stateHandler.addTestCase(testCase);
+                stateHandler.addTestCase(problemId, testCase);
             }
         }
+    };
+
+    const updateSubmissions = async () => {
+        const { website, contestId, problemList } = stateHandler.get();
+        const [workerPage] = await contestBrowser.pages();
+        if (website && contestId && problemList) {
+            const newSubmissions = [];
+            switch (website) {
+                case CODEFORCES:
+                    await workerPage.goto(
+                        `https://codeforces.com/contest/${contestId}/my`
+                    );
+                    const submissionTables = await workerPage.$$(
+                        ".status-frame-datatable"
+                    );
+                    for (const table of submissionTables) {
+                        const rows = await table.$$("tr");
+                        for (let i = 1; i < rows.length; i++) {
+                            const cells = await rows[i].$$("td");
+                            const data = [];
+                            for (const cell of cells) {
+                                const val = await cell.evaluate(
+                                    (val) => val.innerText
+                                );
+                                data.push(val);
+                            }
+                            newSubmissions.push({
+                                problemId: data[3],
+                                time: data[1],
+                                verdict: data[5],
+                            });
+                        }
+                    }
+                    break;
+                case ATCODER:
+                    await workerPage.goto(
+                        `https://atcoder.jp/contests/${contestId}/submissions/me`
+                    );
+                    const table = await workerPage.$("tbody");
+                    const rows = await table.$$("tr");
+                    for (let i = 0; i < rows.length; i++) {
+                        const cells = await rows[i].$$("td");
+                        const data = [];
+                        for (const cell of cells) {
+                            const val = await cell.evaluate(
+                                (val) => val.innerText
+                            );
+                            data.push(val);
+                        }
+                        newSubmissions.push({
+                            problemId: data[1],
+                            time: data[0],
+                            verdict: data[6],
+                        });
+                    }
+                    break;
+                default:
+                    break;
+            }
+            stateHandler.set("submissions", newSubmissions);
+        }
+    };
+
+    const updateStandings = async () => {
+        const { website, contestId, problemList } = stateHandler.get();
+        const [workerPage] = await contestBrowser.pages();
+        if (website && contestId && problemList) {
+            let newStandings = {};
+            newStandings.solve = {};
+            switch (website) {
+                case CODEFORCES:
+                    await workerPage.goto(
+                        `https://codeforces.com/contest/${contestId}/standings/friends/true`
+                    );
+                    await workerPage.waitForSelector(`.standingsStatisticsRow`);
+                    const solveRow = await workerPage.$(
+                        ".standingsStatisticsRow"
+                    );
+                    const counts = await solveRow.$$("td");
+                    for (let i = 0; i < problemList.length; i++) {
+                        newStandings.solve[problemList[i].id] = await counts[
+                            i + 4
+                        ].evaluate((val) => val.innerText);
+                    }
+                    try {
+                        const myRow = await workerPage.$(".highlighted-row");
+                        const myRank = await myRow.$$("td");
+                        newStandings.rank = await myRank[0].evaluate(
+                            (val) => val.innerText
+                        );
+                    } catch (e) {
+                        newStandings.rank = "Cannot find you";
+                    }
+                    break;
+                case ATCODER:
+                    await workerPage.goto(
+                        `https://atcoder.jp/contests/${contestId}/standings`
+                    );
+                    await workerPage.waitForSelector("#standings-tbody");
+                    const table = await workerPage.$("#standings-tbody");
+                    const solves = await table.$(".standings-statistics");
+                    const cells = await solves.$$("td");
+                    for (let i = 1; i < cells.length; i++) {
+                        newStandings.solve[problemList[i - 1].id] = await cells[
+                            i
+                        ].evaluate((val) => val.innerText);
+                    }
+                    try {
+                        const me = await table.$(".info");
+                        const rank = await me.$$("td");
+                        newStandings.rank = await rank[0].evaluate(
+                            (val) => val.innerText
+                        );
+                    } catch (e) {
+                        newStandings.rank = "Cannot find you";
+                    }
+                    break;
+                default:
+                    break;
+            }
+            stateHandler.set("standings", newStandings);
+        }
+    };
+
+    const change = async (problemId, langId) => {
+        const { problemList, config, contestId, website } = stateHandler.get();
+        const problemName = problemList[problemId].id;
+        const lang = config.languages[langId];
+        const contestDir = path.join(filesDir, `${website}_${contestId}`);
+        const [, screencastPage] = await contestBrowser.pages();
+        let fileLoc = path.join(contestDir, `${problemName}.${lang.extension}`);
+        if (!fs.existsSync(fileLoc)) {
+            const templateCode = fs.readFileSync(lang.template, {
+                encoding: "utf-8",
+            });
+            fs.writeFileSync(fileLoc, templateCode);
+        }
+        switch (website) {
+            case CODEFORCES:
+                screencastPage.goto(
+                    `https://codeforces.com/contest/${contestId}/problem/${problemName}`
+                );
+                break;
+            case ATCODER:
+                screencastPage.goto(
+                    `https://atcoder.jp/contests/${contestId}/tasks/${contestId}_${problemName}`
+                );
+                break;
+            default:
+                break;
+        }
+        jobsHandler.addPrimaryJob({ type: "parse", problemId }, () =>
+            parse(problemId)
+        );
         stateHandler.addToLog(`Solving problem ${problemName} in ${lang.name}`);
         runCommandSync(`${config.editor} ${fileLoc}`);
     };
@@ -540,7 +550,7 @@ const getBrowserHandler = () => {
     };
 
     const screencastInteract = async (data) => {
-        const [, , , screencastPage] = await contestBrowser.pages();
+        const [, screencastPage] = await contestBrowser.pages();
         const { x, y, type } = JSON.parse(data);
         switch (type) {
             case "click":
@@ -558,7 +568,7 @@ const getBrowserHandler = () => {
     };
 
     const installMouseHelper = async () => {
-        const [, , , screencastPage] = await contestBrowser.pages();
+        const [, screencastPage] = await contestBrowser.pages();
         await screencastPage.evaluateOnNewDocument(() => {
             // Install mouse helper only for top-level frame.
             if (window !== window.parent) return;

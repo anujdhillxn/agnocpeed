@@ -19,8 +19,6 @@ module.exports = {
         website: null,
         contestId: null,
         problemList: [],
-        currentProblem: null,
-        currentLanguage: 0,
         submissions: [],
         standings: null,
         log: "",

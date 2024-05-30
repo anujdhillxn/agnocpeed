@@ -13,10 +13,12 @@ const { getStateHandler } = require("./stateHandler");
 const { getCommHandler } = require("./commHandler");
 const { getOsHandler } = require("./osHandler");
 const { getBrowserHandler } = require("./browserHandler");
+const { getJobsHandler } = require("./jobsHandler");
 const stateHandler = getStateHandler();
 const commHandler = getCommHandler();
 const osHandler = getOsHandler();
 const browserHandler = getBrowserHandler();
+const jobsHandler = getJobsHandler();
 
 require("@electron/remote/main").initialize();
 
@@ -44,7 +46,7 @@ async function init() {
     }
     commHandler.initialize(win);
     stateHandler.initialize(INITIAL_STATE, commHandler);
-    browserHandler.initialize(commHandler, stateHandler);
+    browserHandler.initialize(commHandler, stateHandler, jobsHandler);
     osHandler.initialize(commHandler, stateHandler);
     browserHandler.getFutureContests();
 }
@@ -81,17 +83,17 @@ ipcMain.on("start", (event, id) => {
 ipcMain.on("change", (event, problemId, langId) => {
     browserHandler.change(problemId, langId);
 });
-ipcMain.on("compile", (event) => {
-    osHandler.compile();
+ipcMain.on("compile", (event, problemIdx, langIdx) => {
+    osHandler.compile(problemIdx, langIdx);
 });
-ipcMain.on("run", (event) => {
-    osHandler.run();
+ipcMain.on("run", (event, problemIdx, langIdx) => {
+    osHandler.run(problemIdx, langIdx);
 });
-ipcMain.on("reset", (event) => {
-    osHandler.reset();
+ipcMain.on("reset", (event, problemIdx, langIdx) => {
+    osHandler.reset(problemIdx, langIdx);
 });
-ipcMain.on("submit", (event) => {
-    browserHandler.submit();
+ipcMain.on("submit", (event, problemIdx, langIdx) => {
+    browserHandler.submit(problemIdx, langIdx);
 });
 ipcMain.on("saveLayout", (event, newLayout) => {
     stateHandler.saveLayout(newLayout);
@@ -99,14 +101,14 @@ ipcMain.on("saveLayout", (event, newLayout) => {
 ipcMain.on("clearLog", (event) => {
     stateHandler.clearLog();
 });
-ipcMain.on("changeTestCases", (event, idx, box, text) => {
-    stateHandler.changeTestCases(idx, box, text);
+ipcMain.on("changeTestCases", (event, problemIdx, idx, box, text) => {
+    stateHandler.changeTestCases(problemIdx, idx, box, text);
 });
-ipcMain.on("addNewTestCase", (event) => {
-    stateHandler.addTestCase();
+ipcMain.on("addNewTestCase", (event, problemIdx) => {
+    stateHandler.addTestCase(problemIdx);
 });
-ipcMain.on("deleteTestCase", (event, idx) => {
-    stateHandler.deleteTestCase();
+ipcMain.on("deleteTestCase", (event, problemIdx, idx) => {
+    stateHandler.deleteTestCase(problemIdx, idx);
 });
 ipcMain.on("changeConfig", (event, key, newVal) => {
     stateHandler.changeConfig(key, newVal);

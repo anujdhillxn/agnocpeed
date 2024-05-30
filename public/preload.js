@@ -6,14 +6,19 @@ const API = {
         ipcRenderer.send("login", username, password, platform),
     start: (id) => ipcRenderer.send("start", id),
     change: (problemId, lang) => ipcRenderer.send("change", problemId, lang),
-    compile: () => ipcRenderer.send("compile"),
-    run: () => ipcRenderer.send("run"),
-    reset: () => ipcRenderer.send("reset"),
-    submit: () => ipcRenderer.send("submit"),
-    changeTestCases: (idx, box, text) =>
-        ipcRenderer.send("changeTestCases", idx, box, text),
-    addNewTestCase: () => ipcRenderer.send("addNewTestCase"),
-    deleteTestCase: (idx) => ipcRenderer.send("deleteTestCase", idx),
+    compile: (problemIdx, langIdx) =>
+        ipcRenderer.send("compile", problemIdx, langIdx),
+    run: (problemIdx, langIdx) => ipcRenderer.send("run", problemIdx, langIdx),
+    reset: (problemIdx, langIdx) =>
+        ipcRenderer.send("reset", problemIdx, langIdx),
+    submit: (problemIdx, langIdx) =>
+        ipcRenderer.send("submit", problemIdx, langIdx),
+    changeTestCases: (problemIdx, idx, box, text) =>
+        ipcRenderer.send("changeTestCases", problemIdx, idx, box, text),
+    addNewTestCase: (problemIdx) =>
+        ipcRenderer.send("addNewTestCase", problemIdx),
+    deleteTestCase: (problemIdx, idx) =>
+        ipcRenderer.send("deleteTestCase", problemIdx, idx),
     saveLayout: (newLayout) => ipcRenderer.send("saveLayout", newLayout),
     clearLog: () => ipcRenderer.send("clearLog"),
     changeConfig: (key, newVal) =>
