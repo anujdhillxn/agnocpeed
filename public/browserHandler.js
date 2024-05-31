@@ -63,7 +63,7 @@ const getBrowserHandler = () => {
     };
 
     const startContest = async (id) => {
-        const { website } = stateHandler.get();
+        const { website, config } = stateHandler.get();
         const [page] = await loginBrowser.pages();
         if (website == null) {
             commHandler.setLoginMessage("Select a platform first!");
@@ -73,7 +73,7 @@ const getBrowserHandler = () => {
             const cookies = await page.cookies();
             contestBrowser = await puppeteer.launch({
                 executablePath: getChromiumExecPath(),
-                headless: true,
+                headless: config.headless,
                 defaultViewport: {
                     width: 800,
                     height: 600,
