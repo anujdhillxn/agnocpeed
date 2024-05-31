@@ -13,7 +13,7 @@
             "template": "C:\\Users\\admin\\CompetitiveProgramming_Boilerplate\\template.cpp",
             "compileCommand": "g++ {contestDir}\\{problemId}.cpp -o {contestDir}\\{problemId}.exe",
             "runCommand": "{contestDir}\\{problemId}.exe",
-            "idAtcoder": "4003",
+            "idAtcoder": "5001",
             "idCodeforces": "73"
         }
     ],

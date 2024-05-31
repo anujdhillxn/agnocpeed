@@ -93,7 +93,9 @@ ipcMain.on("reset", (event, problemIdx, langIdx) => {
     osHandler.reset(problemIdx, langIdx);
 });
 ipcMain.on("submit", (event, problemIdx, langIdx) => {
-    browserHandler.submit(problemIdx, langIdx);
+    jobsHandler.addPrimaryJob({ type: "submit", problemIdx, langIdx }, () =>
+        browserHandler.submit(problemIdx, langIdx)
+    );
 });
 ipcMain.on("saveLayout", (event, newLayout) => {
     stateHandler.saveLayout(newLayout);
