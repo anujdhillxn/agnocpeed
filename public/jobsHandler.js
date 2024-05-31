@@ -46,7 +46,6 @@ const getJobsHandler = () => {
             loopRunning = true;
             const job = primaryJobs[0];
             primaryJobs = primaryJobs.slice(1);
-            console.log("Executing", job.metaData);
             job.callback()
                 .then((res) => {
                     executeJobs();
@@ -60,14 +59,12 @@ const getJobsHandler = () => {
         if (secondaryJobs.length) {
             loopRunning = true;
             const job = secondaryJobs[0];
-            console.log("Executing", job.metaData);
             secondaryJobs = secondaryJobs.slice(1);
             job.callback()
                 .then((res) => {
                     executeJobs();
                 })
                 .catch((res) => {
-                    secondaryJobs.push(job);
                     executeJobs();
                 });
             return;

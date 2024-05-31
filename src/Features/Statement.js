@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 
 const getRatio = (position) => {
     const widthChange = 800 / position.width;
-    const heightChange = 600 / position.height;
+    const heightChange = 480 / position.height;
     return { widthChange, heightChange };
 };
 

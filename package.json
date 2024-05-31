@@ -10,7 +10,7 @@
     "dependencies": {
         "@electron/remote": "^2.0.8",
         "electron-is-dev": "^2.0.0",
-        "puppeteer": "^22.10.0",
+        "puppeteer": "^15.5.0",
         "sound-play": "^1.1.0"
     },
     "build": {
